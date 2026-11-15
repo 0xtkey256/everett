@@ -315,3 +315,13 @@ a { color: var(--blue); }
 .run-chip.miss { color: #ff8a90; border-color: rgba(217, 67, 75, .45); background: rgba(217, 67, 75, .07); }
 .run-chip:hover { text-decoration: none; filter: brightness(1.25); }
 @media (max-width: 760px) { .why32 { grid-template-columns: 1fr 1fr; } .w-vs { display: none; } }
+
+/* ---------- "see it running" drop-downs ---------- */
+.shot { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+.shot summary { cursor: pointer; font: 600 13px var(--mono); color: var(--green); list-style: none; display: flex; align-items: center; gap: 6px; }
+.shot summary::-webkit-details-marker { display: none; }
+.shot summary::before { content: "▸"; transition: transform .2s; display: inline-block; }
+.shot[open] summary::before { transform: rotate(90deg); }
+.shot img { width: 100%; margin-top: 8px; border-radius: 8px; border: 1px solid var(--line); animation: shotin .45s ease-out; }
+@keyframes shotin { from { opacity: 0; transform: translateY(-6px); } }
+.shot .cap { font-size: 12.5px !important; color: var(--muted) !important; margin-top: 6px !important; }

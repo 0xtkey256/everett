@@ -46,7 +46,7 @@ The UI is rebuilt entirely from an event stream, so the same screen plays live (
 | Base + 1 world sandbox ready (incl. bug + 2 checkouts) | **3.3 s** |
 | Full suite (133 tests) in a world | **~1.8 s** |
 | Concurrency cap | 10 vCPU total on Tier 1 → 1 base + 8 boxes × 4 worlds |
-| Why 32 worlds (mercantile x/y swap, 6 runs, 196 worlds) | **one AI attempt fixes it 4.6% of the time; 32 worlds found the fix in 5 of 6 runs**, ~46–53 s each (`docs/eval-results.md`) |
+| Why 32 worlds (mercantile x/y swap, 7 runs, 228 worlds) | **one AI attempt fixes it 4.4% of the time; 32 worlds found the fix in 6 of 7 runs**, ~46–53 s each (`docs/eval-results.md`) |
 | `fork()` | implemented as the preferred fan-out (`EVERETT_FORK=auto`): the prepared base world is forked into the world sandboxes; on our Tier-1 org Daytona answers *"Forking is not supported for this sandbox"* (needs the `linux-vm` class), so Everett falls back to snapshot creation automatically and says so on screen |
 
 ## Run it

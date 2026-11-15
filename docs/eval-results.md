@@ -65,7 +65,9 @@ Success varies run to run with a 7B model; the replay of run 4 is unedited.
 
 | x/y swap, via the live tower (run started 15:25; finished despite the server restart) | 5b | **1** | 14 | 21 | 2 (36 worlds) | 53 s | replay `tower-1.json` |
 
-**Reliability on the x/y-swap bug: 5 of 6 runs found the fix (~46–53 s each); the miss is run 5 (replay `tower-2.json`).**
-**Why 32 worlds:** across those 6 runs, 9 of 196 worlds were green — **one AI attempt fixes the bug 4.6% of the time**.
-If attempts were independent, 32 of them would contain at least one fix with probability 1 − 0.954³² ≈ 78%; observed: 5 of 6 (83%).
+| x/y swap (run during the dashboard screenshots) | 9 | **1** | — | — | 1 | 50 s | winner `w06`; replay `tokyo-run-d.json` |
+
+**Reliability on the x/y-swap bug: 6 of 7 runs found the fix (~46–53 s each); the miss is run 5 (replay `tower-2.json`).**
+**Why 32 worlds:** across those 7 runs, 10 of 228 worlds were green — **one AI attempt fixes the bug 4.4% of the time**.
+If attempts were independent, 32 of them would contain at least one fix with probability 1 − 0.956³² ≈ 76%; observed: 6 of 7 (86%).
 Each green world is verified by the full suite (136 tests) and the Tokyo Tower probe; nothing is hand-picked.

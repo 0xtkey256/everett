@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=160302">
+<link rel="stylesheet" href="css/style.css?v=160743">
 </head>
 <body>
 
@@ -35,24 +35,33 @@
       <li><span class="n">3</span><b data-i18n="how3t">The tests decide</b><p data-i18n="how3">The fix that passes every test — and breaks nothing else — is merged. The other 31 are thrown away.</p></li>
     </ol>
     <div class="why32">
-      <div class="w-num"><b>4.6%</b><span data-i18n="w_single">one AI attempt fixes the bug</span></div>
+      <div class="w-num"><b>4.4%</b><span data-i18n="w_single">one AI attempt fixes the bug</span></div>
       <div class="w-vs mono">vs</div>
-      <div class="w-num good"><b>5 / 6</b><span data-i18n="w_many">runs with 32 worlds found the fix</span></div>
+      <div class="w-num good"><b>6 / 7</b><span data-i18n="w_many">runs with 32 worlds found the fix</span></div>
       <div class="w-num"><b>~50 s</b><span data-i18n="w_time">per run, end to end</span></div>
     </div>
     <div class="runs">
-      <span class="mono runs-lab" data-i18n="w_runs">real runs (196 worlds):</span>
+      <span class="mono runs-lab" data-i18n="w_runs">real runs (228 worlds):</span>
       <a class="run-chip ok" href="?replay=tokyo">✓ 4/32 · 53s</a>
       <a class="run-chip ok" href="?replay=tower-1">✓ 1/36 · 53s</a>
       <a class="run-chip miss" href="?replay=tower-2">✗ 0/32 · 39s</a>
       <a class="run-chip ok" href="?replay=tokyo-run-a">✓ 1/32 · 47s</a>
       <a class="run-chip ok" href="?replay=tokyo-run-b">✓ 2/32 · 47s</a>
       <a class="run-chip ok" href="?replay=tokyo-run-c">✓ 1/32 · 46s</a>
+      <a class="run-chip ok" href="?replay=tokyo-run-d">✓ 1/32 · 50s</a>
     </div>
     <p class="example" data-i18n="example">Today's example comes from our world, satellite imagery: one wrong line makes a map-tile library send Tokyo to Antarctica. Every world shows the satellite image its fix would fetch.</p>
     <div class="under">
-      <div class="u-card"><b>Daytona</b><p data-i18n="u_daytona">Each world runs in an isolated Daytona sandbox started from a pre-built snapshot (Python, repo, dependencies): 1 base + 8 sandboxes × 4 worlds = 32 worlds within a 10-vCPU account. A world starts in ~2 s and runs the full test suite in under 2 s; every sandbox is labelled and deleted after the run. Built for <code>sandbox.fork()</code> — a copy-on-write clone of a ready world.</p></div>
-      <div class="u-card"><b>Nosana</b><p data-i18n="u_nosana">The AI runs on one NVIDIA RTX 3090 (24 GB) rented from Nosana's decentralized GPU network. Our Nosana job is a container spec: vLLM 0.8.5 serving Qwen2.5-Coder-7B-Instruct behind an OpenAI-compatible HTTPS endpoint, health-checked on /v1/models. One request returns 8 different patches (n=8) in ~2.3 s — vLLM computes the shared prompt once and samples 8 fixes in parallel. $0.19/h: a whole run ≈ 35k tokens ≈ $0.003.</p></div>
+      <div class="u-card"><b>Daytona</b><p data-i18n="u_daytona">Each world runs in an isolated Daytona sandbox started from a pre-built snapshot (Python, repo, dependencies): 1 base + 8 sandboxes × 4 worlds = 32 worlds within a 10-vCPU account. A world starts in ~2 s and runs the full test suite in under 2 s; every sandbox is labelled and deleted after the run. Built for <code>sandbox.fork()</code> — a copy-on-write clone of a ready world.</p>
+        <details class="shot"><summary data-i18n="see_daytona">See it running on Daytona</summary>
+          <img src="img-daytona-run.jpg" alt="Daytona dashboard: 9 sandboxes started from the everett-base-merc snapshot" loading="lazy">
+          <p class="cap" data-i18n="cap_daytona">Daytona dashboard during a live run: 9 sandboxes started from the <code>everett-base-merc</code> snapshot — 1 base + 8 world sandboxes, 1 vCPU each.</p>
+        </details></div>
+      <div class="u-card"><b>Nosana</b><p data-i18n="u_nosana">The AI runs on one NVIDIA RTX 3090 (24 GB) rented from Nosana's decentralized GPU network. Our Nosana job is a container spec: vLLM 0.8.5 serving Qwen2.5-Coder-7B-Instruct behind an OpenAI-compatible HTTPS endpoint, health-checked on /v1/models. One request returns 8 different patches (n=8) in ~2.3 s — vLLM computes the shared prompt once and samples 8 fixes in parallel. $0.19/h: a whole run ≈ 35k tokens ≈ $0.003.</p>
+        <details class="shot"><summary data-i18n="see_nosana">See it running on Nosana</summary>
+          <img src="img-nosana-run.jpg" alt="Nosana deployment running Qwen2.5-Coder on an RTX 3090" loading="lazy">
+          <p class="cap" data-i18n="cap_nosana">Nosana deployment during the event: the <code>coder</code> endpoint on :9000, running on an NVIDIA GeForce RTX 3090 (endpoint URL and IDs blurred).</p>
+        </details></div>
     </div>
   </div>
 </section>
@@ -134,7 +143,7 @@
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/motion.js?v=160302"></script>
-<script type="module" src="js/app.js?v=160302"></script>
+<script src="js/motion.js?v=160743"></script>
+<script type="module" src="js/app.js?v=160743"></script>
 </body>
 </html>

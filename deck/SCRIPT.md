@@ -24,7 +24,7 @@ Here's how. CI fails. A small AI model suggests four causes and writes thirty-tw
 
 ## 6. Example: satellite imagery  (1:37–1:57)
 
-I work with satellite imagery at Solafune, so here's an example from our world. [switch to the live site] We broke one line of mercantile, an open-source map-tile library. Ask it for Tokyo Tower, and it downloads polar ice. Thirty-two worlds, four found the fix, and the smallest won: one line, all hundred thirty-six tests green, in fifty-three seconds. Why thirty-two? One AI attempt fixes this bug under five percent of the time. With thirty-two worlds, five of six runs found it. [back to the slides]
+I work with satellite imagery at Solafune, so here's an example from our world. [switch to the live site] We broke one line of mercantile, an open-source map-tile library. Ask it for Tokyo Tower, and it downloads polar ice. Thirty-two worlds, four found the fix, and the smallest won: one line, all hundred thirty-six tests green, in fifty-three seconds. Why thirty-two? One AI attempt fixes this bug under five percent of the time. With thirty-two worlds, six of seven runs found it. [back to the slides]
 
 ## 7. Daytona & sandbox.fork()  (1:57–2:08)
 
@@ -34,6 +34,10 @@ Everett is designed around Daytona's sandbox fork: copy a running, ready-to-test
 
 The model runs on our own GPU: one RTX 3090 rented from Nosana for nineteen cents an hour. vLLM serves it as an OpenAI-style API. Each request asks for eight patches at once, back in about two seconds. A whole run costs about a third of a cent.
 
-## 9. Closing  (2:26–2:30)
+## 9. Proof: it really ran
+
+[show for a few seconds while finishing the Nosana line — real Daytona and Nosana dashboards from today]
+
+## 10. Closing  (2:26–2:30)
 
 Agents shouldn't guess. Branch the world, then observe. Thank you.
