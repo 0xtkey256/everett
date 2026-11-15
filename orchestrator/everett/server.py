@@ -98,8 +98,10 @@ def _events_of(run_id: str) -> list[dict]:
 
 
 @app.get("/runs/{run_id}/log.json")
-def log(run_id: str):
-    return _events_of(run_id)
+def log(run_id: str, after: int = 0):
+    """Full event list, or only events with seq > after (incremental polling — works through any proxy)."""
+    ev = _events_of(run_id)
+    return [e for e in ev if e["seq"] > after] if after else ev
 
 
 @app.get("/runs/{run_id}/events")
