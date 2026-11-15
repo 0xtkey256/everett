@@ -74,6 +74,21 @@
     // ---- continents as dots: Natural Earth 110m land (world-atlas), sampled on an equal-spacing grid ----
     var land = [];
     var TOKYO = [35.66 * Math.PI / 180, 139.75 * Math.PI / 180];
+    // 31 capitals + Tokyo = 32 worlds. Each keeps a steady dot; a few at a time ping with a fading label.
+    var CAPS = [
+      ["WASHINGTON", 38.90, -77.04], ["OTTAWA", 45.42, -75.70], ["MEXICO CITY", 19.43, -99.13],
+      ["BOGOTÁ", 4.71, -74.07], ["LIMA", -12.05, -77.04], ["BRASÍLIA", -15.79, -47.88],
+      ["SANTIAGO", -33.45, -70.67], ["BUENOS AIRES", -34.60, -58.38], ["LONDON", 51.51, -0.13],
+      ["PARIS", 48.86, 2.35], ["MADRID", 40.42, -3.70], ["BERLIN", 52.52, 13.40],
+      ["ROME", 41.90, 12.50], ["STOCKHOLM", 59.33, 18.07], ["WARSAW", 52.23, 21.01],
+      ["MOSCOW", 55.76, 37.62], ["ANKARA", 39.93, 32.86], ["CAIRO", 30.04, 31.24],
+      ["ABUJA", 9.08, 7.40], ["NAIROBI", -1.29, 36.82], ["PRETORIA", -25.75, 28.19],
+      ["RIYADH", 24.71, 46.68], ["NEW DELHI", 28.61, 77.21], ["BANGKOK", 13.76, 100.50],
+      ["SINGAPORE", 1.35, 103.82], ["JAKARTA", -6.21, 106.85], ["BEIJING", 39.90, 116.41],
+      ["MANILA", 14.60, 120.98], ["SEOUL", 37.57, 126.98], ["CANBERRA", -35.28, 149.13],
+      ["WELLINGTON", -41.29, 174.78]
+    ].map(function (c) { return { n: c[0], lat: c[1] * Math.PI / 180, lon: c[2] * Math.PI / 180, t0: -1e9 }; });
+    var nextPing = 0, capIdx = 0;
     if (window.fetch) fetch("https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/land-110m.json")
       .then(function (r) { return r.json(); })
       .then(function (topo) {
@@ -136,6 +151,32 @@
         var rr = (0.75 + 1.05 * q2.z) * DPR;
         ctx.fillStyle = "rgba(110,231,183," + (0.18 + 0.72 * q2.z).toFixed(3) + ")";
         ctx.fillRect(q2.x - rr, q2.y - rr, rr * 2, rr * 2);
+      }
+      // capitals: steady dots; every 650 ms the next one on the visible side pings (stride 7 hops around the globe)
+      if (land.length) {
+        if (ts > nextPing) {
+          for (var tries = 0; tries < CAPS.length; tries++) {
+            capIdx = (capIdx + 7) % CAPS.length;
+            var cand = CAPS[capIdx];
+            if (proj(cand.lat, cand.lon, rot).z > 0.3) { cand.t0 = ts; break; }
+          }
+          nextPing = ts + 650;
+        }
+        ctx.font = "600 " + (9 * DPR) + "px 'JetBrains Mono', monospace";
+        for (var ci = 0; ci < CAPS.length; ci++) {
+          var C = CAPS[ci], cp = proj(C.lat, C.lon, rot);
+          if (cp.z <= 0.05) continue;
+          var dz = Math.min(1, cp.z * 2);
+          ctx.fillStyle = "rgba(125,177,255," + (0.35 + 0.55 * dz).toFixed(3) + ")";
+          ctx.beginPath(); ctx.arc(cp.x, cp.y, 1.8 * DPR, 0, 6.283); ctx.fill();
+          var age = (ts - C.t0) / 1800;
+          if (age >= 0 && age < 1) {
+            ctx.strokeStyle = "rgba(79,209,255," + (0.85 * (1 - age) * dz).toFixed(3) + ")"; ctx.lineWidth = 1.3 * DPR;
+            ctx.beginPath(); ctx.arc(cp.x, cp.y, (3 + 14 * age) * DPR, 0, 6.283); ctx.stroke();
+            ctx.globalAlpha = Math.max(0, 1 - age * 1.2) * dz;
+            ctx.fillStyle = "#c9d6e8"; ctx.fillText(C.n, cp.x + 7 * DPR, cp.y - 5 * DPR); ctx.globalAlpha = 1;
+          }
+        }
       }
       // Tokyo: where the demo's satellite pipeline should be looking
       var tk = proj(TOKYO[0], TOKYO[1], rot);
