@@ -1,0 +1,13 @@
+diff --git a/mercantile/__init__.py b/mercantile/__init__.py
+index 35eb28d..5febf0c 100644
+--- a/mercantile/__init__.py
++++ b/mercantile/__init__.py
+@@ -432,7 +432,7 @@ def tile(lng, lat, zoom, truncate=False):
+     else:
+         ytile = int(math.floor((y + EPSILON) * Z2))
+ 
+-    return Tile(xtile, ytile, zoom)
++    return Tile(ytile, xtile, zoom)
+ 
+ 
+ def quadkey(*tile):

@@ -25,10 +25,10 @@ def load_env():
             os.environ.setdefault(k.strip(), v.split(" #")[0].strip())
 
 
-def image(repo: str) -> Image:
+def image(repo: str, extra: list[str]) -> Image:
     return (Image.debian_slim("3.12")
             .run_commands("apt-get update -qq && apt-get install -y -qq git >/dev/null && rm -rf /var/lib/apt/lists/*")
-            .pip_install(["pytest", "pytest-timeout"])
+            .pip_install(["pytest", "pytest-timeout", *extra])
             .run_commands(f"git clone --depth 1 {repo} {REPO_DIR}",
                           f"cd {REPO_DIR} && pip install -q -e . && python -m pytest -q -p no:cacheprovider || true",
                           f"chmod -R a+rwX {REPO_DIR}")
@@ -40,11 +40,12 @@ def main():
     ap.add_argument("--class", dest="klass", default="linux-vm")
     ap.add_argument("--name", default=None)
     ap.add_argument("--repo", default="https://github.com/un33k/python-slugify.git")
+    ap.add_argument("--pip", nargs="*", default=[], help="extra packages (e.g. hypothesis)")
     a = ap.parse_args()
     load_env()
     d = Daytona(DaytonaConfig(api_key=os.environ["DAYTONA_API_KEY"]))
     name = a.name or f"everett-base-{'vm' if a.klass == 'linux-vm' else 'ct'}"
-    kw = {"name": name, "image": image(a.repo)}
+    kw = {"name": name, "image": image(a.repo, a.pip)}
     if a.klass != "container":
         kw["sandbox_class"] = a.klass
     t = time.perf_counter()

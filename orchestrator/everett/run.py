@@ -10,7 +10,7 @@ import time
 from dataclasses import dataclass, field
 
 from . import patches as P
-from .context import rank_sources, test_snippets
+from .context import localize, rank_sources, test_snippets
 from .events import (BaseReady, BaseTests, Collapse, EventBus, Hypothesis, HypothesesProposed, PatchApplied,
                      PatchProposed, PatchRejected, RoundStarted, RunFailed, RunFinished, RunStarted, RunStats,
                      TestProgress, UniverseDisposed, UniverseForked, UniverseObserved)
@@ -29,6 +29,10 @@ class Spec:
     beam_k: int = 4
     beam_children: int = 4
     context_chars: int = 24000
+    snapshot: str = "everett-base-ct"
+    probe: str | None = None
+    landmark: str | None = None
+    truth: list[int] | None = None
 
 
 @dataclass
@@ -64,8 +68,10 @@ async def orchestrate(spec: Spec, bus: EventBus, worlds, llm, model_name: str = 
         if not base_failing:
             raise RuntimeError("the bug did not break any test")
         bus.emit(BaseTests(test_ids=test_ids))
+        probe = ({"label": spec.landmark, "tile": base.tile, "truth": spec.truth} if spec.probe else None)
         bus.emit(BaseReady(setup_ms=int((time.monotonic() - t0) * 1000), sandbox_id=worlds.base.id,
-                           tests_total=len(test_ids), failing_tests=sorted(base_failing), error_summary=base.first_error))
+                           tests_total=len(test_ids), failing_tests=sorted(base_failing), error_summary=base.first_error,
+                           probe=probe))
 
         stage = "context"
         sources = await asyncio.to_thread(worlds.source_files)
@@ -79,17 +85,24 @@ async def orchestrate(spec: Spec, bus: EventBus, worlds, llm, model_name: str = 
         tests_src = test_snippets(sorted(base_failing), read)
         ordered = rank_sources(sources, tests_src, read)[:2]   # the two most relevant files, whole
         sources = ordered
-        ctx_parts, used = [], 0
-        for path in ordered:
-            body = read(path) or ""
-            if used + len(body) > spec.context_chars:
-                continue
-            ctx_parts.append(f"### {path}\n```python\n{body}\n```")
-            used += len(body)
-        context = (f"Repository files (source, editable — edit ONLY these files):\n" + "\n".join(ctx_parts) +
-                   f"\n\nFailing tests (reference only — never edit tests):\n```python\n{tests_src}\n```\n" +
-                   "\n".join(sorted(base_failing)) +
-                   f"\n\nFirst error: {base.first_error}\n\nTest output tail:\n{base.log[-2500:]}")
+        symptom = ""
+        if spec.probe and base.tile and spec.truth:
+            symptom = (f"\nObserved symptom: the pipeline asks for the tile containing {spec.landmark} at zoom {spec.truth[2]} and "
+                       f"gets x={base.tile[0]}, y={base.tile[1]} (the wrong hemisphere); the correct tile is x={spec.truth[0]}, "
+                       f"y={spec.truth[1]}.\n")
+
+        clues = tests_src + "\n" + base.first_error + "\n" + base.log[-2500:] + symptom
+
+        def make_context(override: dict[str, str] | None = None) -> str:
+            files = {p: (override or {}).get(p) or read(p) or "" for p in ordered}
+            excerpts = localize(files, clues) or {p: b for p, b in files.items() if b}
+            parts = [f"### {p} (relevant functions, exact source)\n```python\n{body}\n```" for p, body in excerpts.items()]
+            return (f"Repository files (source, editable — edit ONLY these files):\n" + "\n".join(parts) +
+                    f"\n\nFailing tests (reference only — never edit tests):\n```python\n{tests_src}\n```\n" +
+                    "\n".join(sorted(base_failing)) + symptom +
+                    f"\n\nFirst error: {base.first_error}\n\nTest output tail:\n{base.log[-2500:]}")
+
+        context = make_context()
 
         stage = "hypotheses"
         hyps = await llm.hypotheses(context, spec.k_hyp)
@@ -136,7 +149,8 @@ async def orchestrate(spec: Spec, bus: EventBus, worlds, llm, model_name: str = 
                     bus.emit(PatchRejected(id=w.id, reason="collect_shrank"))
                 bus.emit(UniverseObserved(id=w.id, status=o.status, failing=o.failing[:20],
                                           first_error=tr.first_error if o.status != "green" else "",
-                                          duration_ms=tr.duration_ms, collected=tr.collected))
+                                          duration_ms=tr.duration_ms, collected=tr.collected,
+                                          tile=getattr(tr, "tile", None)))
                 outcomes.append(o)
             finally:
                 slots.put_nowait((box, slot))
@@ -149,7 +163,10 @@ async def orchestrate(spec: Spec, bus: EventBus, worlds, llm, model_name: str = 
 
         async def gen_and_run(h, temp):
             nonlocal counter
-            texts = await llm.patches(context, h, per, temp, example_path=ordered[0] if ordered else "pkg/module.py")
+            try:
+                texts = await llm.patches(context, h, per, temp, example_path=ordered[0] if ordered else "pkg/module.py")
+            except Exception:  # noqa: BLE001  one failed request must not sink the run
+                texts = []
             for text in texts:
                 wid = f"w{counter:02d}"
                 counter += 1
@@ -176,11 +193,14 @@ async def orchestrate(spec: Spec, bus: EventBus, worlds, llm, model_name: str = 
                 h = next(x for x in hyps if x["id"] == pw.hyp)
                 prev = "\n".join(_diff(read, pw.files))
                 extra = (f"A previous attempt applied this change and still fails {len(po.failing)} test(s):\n{prev}\n"
-                         f"Still failing: {', '.join(po.failing[:6])}\nImprove on it (the files below already include it).")
-                ctx2 = context + "\n\nCurrent content of changed files:\n" + "\n".join(
-                    f"### {p}\n```python\n{c}\n```" for p, c in pw.files.items())
-                texts = await llm.patches(ctx2, h, spec.beam_children, 0.7, extra,
-                                          example_path=next(iter(pw.files), ordered[0] if ordered else "pkg/module.py"))
+                         f"Still failing: {', '.join(po.failing[:6])}\nThe files above ALREADY include that change. "
+                         f"Write a further fix on top of them.")
+                ctx2 = make_context(pw.files)   # this world's code, so SEARCH matches what it actually contains
+                try:
+                    texts = await llm.patches(ctx2, h, spec.beam_children, 0.7, extra,
+                                              example_path=next(iter(pw.files), ordered[0] if ordered else "pkg/module.py"))
+                except Exception:  # noqa: BLE001
+                    texts = []
                 for j, text in enumerate(texts):
                     tasks.append(asyncio.create_task(
                         run_world(World(f"{pw.id}.{j + 1}", pw.id, rnd, pw.hyp), text, dict(pw.files))))

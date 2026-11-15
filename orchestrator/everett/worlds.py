@@ -40,12 +40,13 @@ class TestRun:
     duration_ms: int
     exit_code: int
     log: str = ""
+    tile: list[int] | None = None
 
 
 class Worlds:
-    def __init__(self, run_id: str, snapshot: str = "everett-base-ct"):
+    def __init__(self, run_id: str, snapshot: str = "everett-base-ct", probe: str | None = None):
         self.d = Daytona(DaytonaConfig(api_key=config.require("DAYTONA_API_KEY")))
-        self.run_id, self.snapshot = run_id, snapshot
+        self.run_id, self.snapshot, self.probe = run_id, snapshot, probe
         self.base = None
         self.boxes: list[Box] = []
         self.create_ms: list[int] = []
@@ -133,4 +134,13 @@ class Worlds:
         except Exception:  # noqa: BLE001  (no xml: import error / timeout)
             res, err = {}, ((r.result or "").strip().splitlines() or ["no test report"])[-1][:160]
         order = "".join({"passed": ".", "failed": "F", "error": "E", "skipped": "s"}[v] for v in res.values())
-        return TestRun(res, order, len(res), err, dur, r.exit_code, (r.result or "")[-4000:])
+        tile = None
+        if self.probe:
+            pr = sb.process.exec(f"cd {shlex.quote(wdir)} && timeout 20 {self.probe}", timeout=30)
+            for line in (pr.result or "").splitlines():
+                if line.startswith("PROBE "):
+                    try:
+                        tile = [int(v) for v in line.split()[1:4]]
+                    except ValueError:
+                        pass
+        return TestRun(res, order, len(res), err, dur, r.exit_code, (r.result or "")[-4000:], tile)

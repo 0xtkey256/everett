@@ -1,5 +1,6 @@
-import { initialState, reduce, liveSandboxes, median, REASON_TEXT } from "./reducer.js?v=1506";
-import { Replay, connectLive } from "./replay.js?v=1506";
+import { initialState, reduce, liveSandboxes, median, REASON_TEXT } from "./reducer.js?v=152223";
+import { t as tr, applyStatic, onToggle } from "./i18n.js?v=152223";
+import { Replay, connectLive } from "./replay.js?v=152223";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -13,6 +14,10 @@ const replayId = params.get("replay");
 const src = params.get("src");
 const api = (params.get("api") || "").replace(/\/$/, "");
 const admin = new URLSearchParams(location.hash.slice(1)).get("admin");   // fragment: never sent anywhere
+applyStatic();
+onToggle(() => { dirty = true; probeShown = false; tiles.forEach((x) => { x.status = null; }); });
+// the landing page has its own toggle button; mirror clicks onto the main one
+document.getElementById("lang-btn-land")?.addEventListener("click", () => document.getElementById("lang-btn").click());
 if (!replayId && !src && !api) {
   $("landing").hidden = false;
   $("live-form").addEventListener("submit", (e) => {
@@ -28,6 +33,7 @@ if (!replayId && !src && !api) {
 
 function apply(e) { reduce(S, e); dirty = true; }
 function reset() {
+  probeShown = false; $("probe").hidden = true;
   S = initialState(); tiles.clear(); $("wall").innerHTML = ""; $("collapse").hidden = true; collapseShown = false; dirty = true;
 }
 
@@ -36,12 +42,13 @@ async function startReplay(id) {
   if (!res.ok) { $("phase").textContent = `replay "${id}" not found`; return; }
   const events = await res.json();
   const r = new Replay(events, apply, reset);
-  r.setSpeed(2);
+  r.setSpeed(1);
   const seek = $("c-seek");
   seek.max = r.end;
   $("c-status").textContent = "replay";
-  $("c-play").onclick = () => { r.playing ? r.pause() : r.play(); $("c-play").textContent = r.playing ? "Pause" : "Play"; };
-  $("c-restart").onclick = () => { r.seek(0); r.play(); $("c-play").textContent = "Pause"; };
+  $("c-play").textContent = tr("pause");
+  $("c-play").onclick = () => { r.playing ? r.pause() : r.play(); $("c-play").textContent = tr(r.playing ? "pause" : "play"); };
+  $("c-restart").onclick = () => { r.seek(0); r.play(); $("c-play").textContent = tr("pause"); };
   document.querySelectorAll("[data-speed]").forEach((b) => b.onclick = () => {
     r.setSpeed(+b.dataset.speed);
     document.querySelectorAll("[data-speed]").forEach((x) => x.classList.toggle("on", x === b));
@@ -66,14 +73,14 @@ function followLatest(base) {
   let current = null, es = null;
   if (admin) {
     const b = document.createElement("button");
-    b.className = "btn primary sm"; b.type = "button"; b.textContent = "Fix it — launch 32 worlds";
+    b.className = "btn primary sm"; b.type = "button"; b.textContent = tr("fix_it");
     b.onclick = async () => {
       b.disabled = true; b.textContent = "starting…";
       try {
         const r = await fetch(`${base}/runs`, { method: "POST", headers: { "Content-Type": "application/json", "X-Everett-Admin": admin }, body: "{}" });
         b.textContent = r.ok ? "running…" : `error ${r.status}`;
       } catch (e) { b.textContent = "network error"; }
-      setTimeout(() => { b.disabled = false; b.textContent = "Fix it — launch 32 worlds"; }, 8000);
+      setTimeout(() => { b.disabled = false; b.textContent = tr("fix_it"); }, 8000);
     };
     $("controls").prepend(b);
   }
@@ -87,7 +94,7 @@ function followLatest(base) {
         reset();
         es = connectLive(`${base}/runs/${j.run_id}/events`, apply, (st) => { $("c-status").textContent = `${st} · ${current}`; });
       } else if (!j.run_id) {
-        $("c-status").textContent = "tower online · waiting for a run";
+        $("c-status").textContent = tr("waiting_run");
       }
     } catch (e) { $("c-status").textContent = "tower unreachable"; }
   };
@@ -112,21 +119,23 @@ function render() {
   $("m-time").textContent = (s.stats ? s.stats.wall_ms / 1000 : s.ts).toFixed(1) + "s";
   $("m-tokens").textContent = s.stats ? fmtK(s.stats.tokens_prompt + s.stats.tokens_completion) : "—";
   $("phase").innerHTML = phaseText(s);
+  renderProbe(s);
+  $("probe").classList.toggle("solo", s.order.length === 0);
   for (const id of s.order) renderTile(s.worlds[id]);
   if (s.collapse) markCollapse(s);
   renderGraph(s);
 }
 
 function phaseText(s) {
-  if (s.failed) return `<b>run failed</b> at ${esc(s.failed.stage)}: ${esc(s.failed.message)}`;
-  if (s.stats) return `<b>done.</b> ${s.counters.created} worlds tried · ${s.counters.disposed} thrown away · ${s.counters.merged} merged`;
-  if (s.collapse) return s.collapse.winner_id ? `<b>proven:</b> ${esc(s.collapse.winner_id)} — throwing away every other world` : "<b>no world passed</b>";
-  if (s.round > 1) return `<b>round ${s.round}:</b> branching again from the closest worlds`;
-  if (s.order.length) return `<b>round 1:</b> ${s.order.length} worlds, each trying a different fix`;
-  if (Object.keys(s.hyps).length) return `<b>Nosana</b> proposed ${Object.keys(s.hyps).length} hypotheses — writing patches`;
-  if (s.base) return `<b>CI is red:</b> ${s.base.failing_tests.length} failing of ${s.base.tests_total} · ${esc(s.base.error_summary)}`;
-  if (s.run) return "building the base world…";
-  return "waiting for the broken build…";
+  if (s.failed) return tr("ph_failed", { stage: esc(s.failed.stage), msg: esc(s.failed.message) });
+  if (s.stats) return tr("ph_done", { c: s.counters.created, d: s.counters.disposed, m: s.counters.merged });
+  if (s.collapse) return s.collapse.winner_id ? tr("ph_proven", { id: esc(s.collapse.winner_id) }) : tr("ph_none");
+  if (s.round > 1) return tr("ph_r2", { r: s.round });
+  if (s.order.length) return tr("ph_r1", { n: s.order.length });
+  if (Object.keys(s.hyps).length) return tr("ph_hyp", { n: Object.keys(s.hyps).length });
+  if (s.base) return tr("ph_red", { n: s.base.failing_tests.length, total: s.base.tests_total, err: esc(s.base.error_summary) });
+  if (s.run) return tr("ph_base");
+  return tr("ph_wait");
 }
 
 /* ---------------- tiles ---------------- */
@@ -136,11 +145,11 @@ function renderTile(w) {
     const el = document.createElement("div");
     el.className = "tile new";
     setTimeout(() => el.classList.remove("new"), 500);
-    el.innerHTML = `<div class="t-top"><span class="t-id"></span><span class="t-hyp"></span></div>
+    el.innerHTML = `<img class="t-sat" alt=""><div class="t-top"><span class="t-id"></span><span class="t-hyp"></span></div>
       <div class="t-term"></div><canvas class="t-bar" width="240" height="8"></canvas><span class="t-box"></span>`;
     $("wall").appendChild(el);
     t = { el, id: el.querySelector(".t-id"), hyp: el.querySelector(".t-hyp"), term: el.querySelector(".t-term"),
-      bar: el.querySelector(".t-bar"), box: el.querySelector(".t-box"), drawn: -1, status: null };
+      bar: el.querySelector(".t-bar"), box: el.querySelector(".t-box"), sat: el.querySelector(".t-sat"), drawn: -1, status: null, tileKey: null };
     tiles.set(w.id, t);
     t.hyp.textContent = S.hyps[w.hyp]?.label || w.hyp;
     t.box.textContent = w.box;
@@ -154,12 +163,20 @@ function renderTile(w) {
     t.id.innerHTML = `${esc(w.id)}${mark ? `<span class="mark">${mark}</span>` : ""}`;
   }
   let term;
-  if (w.status === "stillborn") term = REASON_TEXT[w.reason] || w.reason || "rejected";
-  else if (w.status === "forking") term = "$ starting world…";
+  if (w.status === "stillborn") term = REASON_TEXT[w.reason] ? tr(w.reason) : (w.reason || "rejected");
+  else if (w.status === "forking") term = tr("starting");
   else if (w.status === "patching") term = `$ git apply ${w.files[0] || ""}`;
   else if (w.status === "red" && w.firstError) term = [w.tail[w.tail.length - 1] || "", w.firstError].join("\n");
   else term = (w.tail.length ? w.tail : ["$ pytest -q"]).join("\n");
   if (t.term.textContent !== term) t.term.textContent = term;
+  if (w.tile && t.tileKey !== w.tile.join("/")) {
+    t.tileKey = w.tile.join("/");
+    t.el.style.setProperty("--sat", `url("${satUrl(w.tile)}")`);
+    t.el.classList.add("has-sat");
+    const lat = document.createElement("span");
+    lat.className = "t-lat"; lat.textContent = fmtLat(w.tile);
+    t.term.before(lat);
+  }
   if (t.drawn !== w.results.length) { drawBar(t.bar, w.results, S.tests.length || w.total || 60); t.drawn = w.results.length; }
   t.el.classList.toggle("lost", !!(S.collapse && w.id !== S.collapse.winner_id && (w.disposed || S.collapse)));
 }
@@ -196,6 +213,9 @@ function markCollapse(s) {
     $("col-tests").textContent = `${total - (w?.failed ?? 0)}/${total}`;
     $("col-worlds").textContent = s.counters.created;
     $("col-time").textContent = s.ts.toFixed(0) + "s";
+    const wt = w?.tile;
+    $("col-sat").parentElement.classList.toggle("none", !wt);
+    if (wt) { $("col-sat").src = satUrl(wt); $("col-sat-cap").textContent = `${S.base?.probe?.label || "target"} · ${fmtLat(wt)}`; }
     $("col-diff").innerHTML = c.diff.split("\n").map((l) => {
       const cls = l.startsWith("+++") || l.startsWith("---") ? "meta" : l.startsWith("@@") ? "hunk"
         : l.startsWith("+") ? "add" : l.startsWith("-") ? "del" : "";
@@ -248,6 +268,22 @@ function renderGraph(s) {
   parts.push(`<circle cx="10" cy="${yBase}" r="5" fill="${s.collapse?.winner_id ? "#42e08a" : "#d9434b"}"/>`);
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.innerHTML = parts.join("");
+}
+
+/* ---------------- satellite probe ---------------- */
+function satUrl([x, y, z]) { return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`; }
+function tileLat([x, y, z]) { const n = Math.PI - 2 * Math.PI * (y + 0.5) / Math.pow(2, z); return 180 / Math.PI * Math.atan(Math.sinh(n)); }
+function fmtLat(t) { const la = tileLat(t); return `${Math.abs(la).toFixed(2)}°${la >= 0 ? "N" : "S"}`; }
+let probeShown = false;
+function renderProbe(s) {
+  const p = s.base?.probe;
+  if (!p || !p.tile || !p.truth || probeShown) return;
+  probeShown = true;
+  $("probe").hidden = false;
+  $("pr-bad").src = satUrl(p.tile); $("pr-good").src = satUrl(p.truth);
+  $("pr-bad-lat").textContent = fmtLat(p.tile); $("pr-good-lat").textContent = fmtLat(p.truth);
+  $("pr-arrow").innerHTML = tr("pr_arrow", { label: esc(p.label || "target") });
+  $("pr-bad-lat").textContent = fmtLat(p.tile) + (Math.abs(tileLat(p.tile)) > 66 ? " · " + tr("polar") : "");
 }
 
 /* ---------------- helpers ---------------- */

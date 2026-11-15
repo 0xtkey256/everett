@@ -2,7 +2,7 @@
 export class Replay {
   constructor(events, onEvent, onReset) {
     this.events = events; this.onEvent = onEvent; this.onReset = onReset;
-    this.t = 0; this.i = 0; this.speed = 1; this.playing = false; this.last = null;
+    this.t = 0; this.i = 0; this.speed = 1; this.playing = false; this.last = null; this.skipGaps = true;
     this.end = events.length ? events[events.length - 1].ts : 0;
     this._tick = this._tick.bind(this);
   }
@@ -19,7 +19,11 @@ export class Replay {
   _tick(now) {
     if (!this.playing) return;
     const dt = (now - this.last) / 1000; this.last = now;
-    this._advance(this.t + dt * this.speed);
+    let t = this.t + dt * this.speed;
+    // skip dead air (waiting on the model) so the audience never stares at an idle screen
+    const next = this.events[this.i];
+    if (this.skipGaps && next && next.ts - t > 2.5) t = next.ts - 1.2;
+    this._advance(t);
     if (this.i >= this.events.length) { this.playing = false; return; }
     requestAnimationFrame(this._tick);
   }

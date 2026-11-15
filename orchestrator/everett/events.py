@@ -36,6 +36,7 @@ class BaseReady(_E):
     tests_total: int
     failing_tests: list[str]
     error_summary: str
+    probe: Optional[dict] = None          # {label, tile:[x,y,z] (broken build), truth:[x,y,z]}
 
 
 class BaseTests(_E):
@@ -104,6 +105,7 @@ class UniverseObserved(_E):
     first_error: str
     duration_ms: int
     collected: int
+    tile: Optional[list[int]] = None      # where this world's code says the landmark is
 
 
 class RoundStarted(_E):

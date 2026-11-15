@@ -1,0 +1,13 @@
+diff --git a/mercantile/__init__.py b/mercantile/__init__.py
+index 35eb28d..6ea0da1 100644
+--- a/mercantile/__init__.py
++++ b/mercantile/__init__.py
+@@ -388,7 +388,7 @@ def _xy(lng, lat, truncate=False):
+     sinlat = math.sin(math.radians(lat))
+ 
+     try:
+-        y = 0.5 - 0.25 * math.log((1.0 + sinlat) / (1.0 - sinlat)) / math.pi
++        y = 0.5 + 0.25 * math.log((1.0 + sinlat) / (1.0 - sinlat)) / math.pi
+     except (ValueError, ZeroDivisionError):
+         raise InvalidLatitudeError("Y can not be computed: lat={!r}".format(lat))
+     else:

@@ -19,7 +19,7 @@ from .worlds import Worlds
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("bug", nargs="?", default="slugify/L1-word-boundary")
+    ap.add_argument("bug", nargs="?", default="mercantile/xy-swap")
     ap.add_argument("--worlds", type=int, default=32)
     ap.add_argument("--boxes", type=int, default=8)
     ap.add_argument("--rounds", type=int, default=2)
@@ -43,7 +43,7 @@ def main():
         return d
 
     bus.emit = emit
-    out = asyncio.run(orchestrate(spec, bus, Worlds(run_id), Nosana()))
+    out = asyncio.run(orchestrate(spec, bus, Worlds(run_id, spec.snapshot, spec.probe), Nosana()))
     print("RESULT", json.dumps(out))
     if a.save:
         p = config.ROOT / "web" / "replays" / f"{a.save}.json"

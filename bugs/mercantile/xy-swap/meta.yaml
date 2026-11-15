@@ -1,0 +1,9 @@
+repo: https://github.com/mapbox/mercantile.git
+commit: cf0625983b054a041362e80ba7d0c4a2fefff840
+level: L1
+snapshot: everett-base-merc
+description: "tile() returns its column and row swapped: the imagery pipeline fetches a tile from the other side of the planet."
+landmark: Tokyo Tower
+probe: python -c "import mercantile as m; t = m.tile(139.7454, 35.6586, 12); print('PROBE', t.x, t.y, t.z)"
+truth: 3637,1613,12
+failing_count: 20

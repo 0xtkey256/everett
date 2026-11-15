@@ -33,7 +33,7 @@ STATE = {"active": None, "latest": None}
 
 
 class RunReq(BaseModel):
-    bug: str = "slugify/L1-word-boundary"
+    bug: str = "mercantile/xy-swap"
     n_worlds: int = 32
     n_boxes: int = 8
     max_rounds: int = 2
@@ -45,16 +45,22 @@ def load_bug(bug: str) -> Spec:
     for line in (d / "meta.yaml").read_text().splitlines():
         if ":" in line and not line.startswith(" "):
             k, v = line.split(":", 1)
-            meta[k.strip()] = v.strip().strip('"')
+            v = v.strip()
+            if len(v) >= 2 and v[0] == v[-1] == '"':
+                v = v[1:-1]          # only unwrap fully quoted values; keep quotes inside commands
+            meta[k.strip()] = v
     repo = meta.get("repo", "").removeprefix("https://github.com/").removesuffix(".git")
-    return Spec(repo=repo, bug_id=bug.replace("/", "-"), bug_patch=(d / "bug.patch").read_text())
+    truth = [int(x) for x in meta["truth"].split(",")] if meta.get("truth") else None
+    return Spec(repo=repo, bug_id=bug.replace("/", "-"), bug_patch=(d / "bug.patch").read_text(),
+                snapshot=meta.get("snapshot", "everett-base-ct"), probe=meta.get("probe") or None,
+                landmark=meta.get("landmark"), truth=truth)
 
 
 async def _run(run_id: str, req: RunReq):
     spec = load_bug(req.bug)
     spec.n_worlds, spec.n_boxes, spec.max_rounds = req.n_worlds, req.n_boxes, req.max_rounds
     try:
-        await orchestrate(spec, BUSES[run_id], Worlds(run_id), Nosana())
+        await orchestrate(spec, BUSES[run_id], Worlds(run_id, spec.snapshot, spec.probe), Nosana())
     finally:
         STATE["active"] = None
 
