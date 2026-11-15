@@ -11,7 +11,9 @@ let collapseShown = false;
 /* ---------------- boot ---------------- */
 const replayId = params.get("replay");
 const src = params.get("src");
-if (!replayId && !src) {
+const api = (params.get("api") || "").replace(/\/$/, "");
+const admin = new URLSearchParams(location.hash.slice(1)).get("admin");   // fragment: never sent anywhere
+if (!replayId && !src && !api) {
   $("landing").hidden = false;
   $("live-form").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -21,7 +23,7 @@ if (!replayId && !src) {
   $("view").hidden = false;
   drawQR();
   requestAnimationFrame(loop);
-  if (src) startLive(src); else startReplay(replayId);
+  if (api) followLatest(api); else if (src) startLive(src); else startReplay(replayId);
 }
 
 function apply(e) { reduce(S, e); dirty = true; }
@@ -49,9 +51,47 @@ async function startReplay(id) {
   r.play();
 }
 
-function startLive(url) {
+function liveControls() {
   $("c-play").hidden = true; document.querySelector(".speeds").hidden = true; $("c-seek").hidden = true; $("c-restart").hidden = true;
+}
+
+function startLive(url) {
+  liveControls();
   connectLive(url, apply, (st) => { $("c-status").textContent = st; });
+}
+
+// Follow whatever run is live on the tower; switch automatically when a new one starts.
+function followLatest(base) {
+  liveControls();
+  let current = null, es = null;
+  if (admin) {
+    const b = document.createElement("button");
+    b.className = "btn primary sm"; b.type = "button"; b.textContent = "Fix it — launch 32 worlds";
+    b.onclick = async () => {
+      b.disabled = true; b.textContent = "starting…";
+      try {
+        const r = await fetch(`${base}/runs`, { method: "POST", headers: { "Content-Type": "application/json", "X-Everett-Admin": admin }, body: "{}" });
+        b.textContent = r.ok ? "running…" : `error ${r.status}`;
+      } catch (e) { b.textContent = "network error"; }
+      setTimeout(() => { b.disabled = false; b.textContent = "Fix it — launch 32 worlds"; }, 8000);
+    };
+    $("controls").prepend(b);
+  }
+  const poll = async () => {
+    try {
+      const r = await fetch(`${base}/runs/latest`, { cache: "no-store" });
+      const j = await r.json();
+      if (j.run_id && j.run_id !== current) {
+        current = j.run_id;
+        if (es) es.close();
+        reset();
+        es = connectLive(`${base}/runs/${j.run_id}/events`, apply, (st) => { $("c-status").textContent = `${st} · ${current}`; });
+      } else if (!j.run_id) {
+        $("c-status").textContent = "tower online · waiting for a run";
+      }
+    } catch (e) { $("c-status").textContent = "tower unreachable"; }
+  };
+  poll(); setInterval(poll, 2000);
 }
 
 /* ---------------- render loop ---------------- */
@@ -215,6 +255,7 @@ function setNum(id, v) { const el = $(id); if (el.textContent !== String(v)) el.
 function fmtK(n) { return n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n); }
 function esc(x) { return String(x ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 function drawQR() {
-  try { new QRCode($("qr"), { text: location.href, width: 184, height: 184, correctLevel: QRCode.CorrectLevel.M }); }
+  const url = location.origin + location.pathname + location.search;   // never include #admin
+  try { new QRCode($("qr"), { text: url, width: 184, height: 184, correctLevel: QRCode.CorrectLevel.M }); }
   catch { $("qr-badge").hidden = true; }
 }

@@ -10,7 +10,7 @@ snapshot:
 fix:
 	cd orchestrator && ../$(PY) -m everett.cli slugify/L1-word-boundary --save live
 serve:
-	cd orchestrator && ../$(PY) -m uvicorn everett.server:app --host 0.0.0.0 --port 8000
+	cd orchestrator && ../$(PY) -m uvicorn everett.server:app --host 127.0.0.1 --port 8000
 web:
 	cd web && python3 -m http.server 8790
 cleanup:
