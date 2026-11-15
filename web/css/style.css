@@ -263,3 +263,39 @@ a { color: var(--blue); }
 .legend { color: var(--muted); font-size: 12px; margin: 2px 0 8px; }
 @media (max-width: 760px) { .steps { grid-template-columns: repeat(2, 1fr); } .step { font-size: 12px; } }
 .tag b { white-space: nowrap; }
+.col-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.col-actions .col-close { margin-top: 0; }
+
+/* ---------- stage presence: banners, beam-in, sweeps, shockwave ---------- */
+.banner { position: fixed; left: 50%; top: 46%; transform: translate(-50%, -50%); z-index: 20; pointer-events: none; text-align: center;
+  opacity: 0; white-space: nowrap; }
+.banner::before { content: ""; position: absolute; inset: -60px -120px; z-index: -1;
+  background: radial-gradient(closest-side, rgba(8, 11, 16, .92), rgba(8, 11, 16, .6) 60%, transparent); }
+.banner.show { animation: banner 2s cubic-bezier(.2, .9, .3, 1) forwards; }
+@keyframes banner {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.82); filter: blur(8px); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(1.03); filter: none; }
+  78% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.08); } }
+.b-kicker { font: 700 17px var(--mono); letter-spacing: .24em; text-transform: uppercase; color: #9fb0c6; margin-bottom: 6px; }
+.b-main { font: 800 clamp(40px, 6.2vw, 92px)/1.04 var(--sans); letter-spacing: -0.035em; }
+.banner.red .b-main { color: #ff6b73; text-shadow: 0 0 34px rgba(217, 67, 75, .55); }
+.banner.blue .b-main { color: #9fd0ff; text-shadow: 0 0 34px rgba(90, 169, 255, .5); }
+.banner.green .b-main { color: var(--green); text-shadow: 0 0 40px rgba(66, 224, 138, .6); }
+
+.tile.new { animation: beam .62s cubic-bezier(.2, .9, .3, 1.1); }
+@keyframes beam {
+  0% { opacity: 0; transform: translateY(-38px) scale(.62); filter: brightness(2.6); }
+  65% { opacity: 1; transform: translateY(3px) scale(1.03); }
+  100% { transform: none; filter: none; } }
+.tile.has-sat::after { content: ""; position: absolute; left: 0; right: 0; height: 32%; top: -36%; pointer-events: none; z-index: 0;
+  background: linear-gradient(180deg, transparent, rgba(140, 188, 242, .22), rgba(225, 242, 255, .65) 50%, transparent 52%);
+  animation: tsweep .95s ease-out 1 forwards; mix-blend-mode: screen; }
+@keyframes tsweep { to { top: 112%; } }
+.tile.lost { opacity: .12; filter: grayscale(1) blur(1px); transform: scale(.86); transition: opacity .6s, filter .6s, transform .6s; }
+.tile.winner { z-index: 3; box-shadow: 0 0 0 3px var(--green), 0 0 46px rgba(66, 224, 138, .65); animation: winpulse 1.3s ease-in-out infinite; }
+@keyframes winpulse { 50% { box-shadow: 0 0 0 3px var(--green), 0 0 70px rgba(66, 224, 138, .9); } }
+.meter.bump .val { animation: bump .35s ease-out; }
+@keyframes bump { 40% { transform: scale(1.18); } }
+.meter .val { display: inline-block; transform-origin: left center; }
+@media (prefers-reduced-motion: reduce) { .banner { display: none; } }

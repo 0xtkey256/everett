@@ -11,6 +11,9 @@ const DICT = {
     example: "今日の例は私たちの世界、衛星画像から。1行の間違いで、地図タイルのライブラリが東京を南極に送ってしまう。各世界は、その修正で取得される衛星画像を表示します。",
     u_daytona: "各世界は、作成済みスナップショット（Python・リポジトリ・依存関係）から起動する Daytona の隔離サンドボックスで動きます。ベース1 + サンドボックス8 × 世界4 = 32 の世界を、10 vCPU のアカウント内で実行。世界の起動は約2秒、テスト全体は2秒未満。サンドボックスにはラベルを付け、実行後にすべて削除します。<code>sandbox.fork()</code>（準備済みの世界をコピーオンライトで複製）を前提に設計。",
     u_nosana: "AI は、Nosana の分散型 GPU ネットワークから借りた NVIDIA RTX 3090（24 GB）1枚で動きます。Nosana のジョブはコンテナの定義（JSON）で、vLLM 0.8.5 が Qwen2.5-Coder-7B-Instruct を OpenAI 互換の HTTPS エンドポイントとして提供し、/v1/models でヘルスチェック。1回のリクエストで違うパッチを8本（n=8）約2.3秒で生成 — vLLM が共通のプロンプトを1回だけ計算し、8通りを並列にサンプリングします。$0.19/時：1回の実行は約3.5万トークン ≈ $0.003。",
+    b_red_k: "CI が赤", b_red_m: "{n} 件のテストが失敗", b_launch_m: "{n} の世界を起動",
+    b_merge_k: "テストで証明", b_merge_m: "1 つをマージ · {d} を破棄", b_none_k: "合格した世界なし", b_none_m: "{c} を試行 · すべて破棄",
+    dl_patch: "パッチをダウンロード", copy_pr: "PR の説明文をコピー", copied: "コピーしました",
     step1: "CI が赤", step2: "AI が 32 の修正を書く", step3: "32 の世界でテスト", step4: "証明された修正をマージ",
     legend: "タイル1枚 = 1つの世界：修正1つ + テスト全部 · ✓ 全部合格 · ✗ まだ失敗 · ⊘ 失格・適用できず",
     m_fork: "世界の起動（中央値）", m_tokens: "AI トークン · Nosana",
@@ -51,7 +54,9 @@ const EN = {
   touches_tests: "edited tests — disqualified", skip_injection: "skipped tests — disqualified", no_match: "patch did not apply",
   parse_error: "unreadable patch", empty: "empty patch", collect_shrank: "fewer tests collected — disqualified",
   starting: "$ starting world…", polar: "polar ice", fix_it: "Fix it — launch 32 worlds", waiting_run: "tower online · waiting for a run",
-  pause: "Pause", play: "Play",
+  b_red_k: "CI is red", b_red_m: "{n} tests failing", b_launch_m: "{n} worlds launched",
+  b_merge_k: "Proven by tests", b_merge_m: "1 merged · {d} thrown away", b_none_k: "No world passed", b_none_m: "{c} tried · all thrown away",
+  pause: "Pause", play: "Play", copy_pr: "Copy PR description", copied: "Copied", dl_patch: "Download patch",
 };
 DICT.en = EN;
 
