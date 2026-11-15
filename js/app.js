@@ -1,5 +1,5 @@
-import { initialState, reduce, liveSandboxes, median, REASON_TEXT } from "./reducer.js";
-import { Replay, connectLive } from "./replay.js";
+import { initialState, reduce, liveSandboxes, median, REASON_TEXT } from "./reducer.js?v=1506";
+import { Replay, connectLive } from "./replay.js?v=1506";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
