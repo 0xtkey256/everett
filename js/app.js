@@ -1,6 +1,6 @@
-import { initialState, reduce, liveSandboxes, median, REASON_TEXT } from "./reducer.js?v=152223";
-import { t as tr, applyStatic, onToggle } from "./i18n.js?v=152223";
-import { Replay, connectLive } from "./replay.js?v=152223";
+import { initialState, reduce, liveSandboxes, median, REASON_TEXT } from "./reducer.js?v=152422";
+import { t as tr, applyStatic, onToggle } from "./i18n.js?v=152422";
+import { Replay, connectLive } from "./replay.js?v=152422";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -84,21 +84,25 @@ function followLatest(base) {
     };
     $("controls").prepend(b);
   }
+  // Poll for new events instead of SSE: quick tunnels buffer text/event-stream, plain JSON always flows.
+  let lastSeq = 0, busy = false, finished = false;
   const poll = async () => {
+    if (busy) return;
+    busy = true;
     try {
       const r = await fetch(`${base}/runs/latest`, { cache: "no-store" });
       const j = await r.json();
-      if (j.run_id && j.run_id !== current) {
-        current = j.run_id;
-        if (es) es.close();
-        reset();
-        es = connectLive(`${base}/runs/${j.run_id}/events`, apply, (st) => { $("c-status").textContent = `${st} · ${current}`; });
-      } else if (!j.run_id) {
-        $("c-status").textContent = tr("waiting_run");
+      if (j.run_id && j.run_id !== current) { current = j.run_id; lastSeq = 0; finished = false; reset(); }
+      if (!j.run_id) { $("c-status").textContent = tr("waiting_run"); return; }
+      if (!finished) {
+        const evs = await (await fetch(`${base}/runs/${current}/log.json?after=${lastSeq}`, { cache: "no-store" })).json();
+        for (const e of evs) { apply(e); lastSeq = Math.max(lastSeq, e.seq); if (e.type === "run.finished" || e.type === "run.failed") finished = true; }
       }
+      $("c-status").textContent = `${finished ? "finished" : "live"} · ${current}`;
     } catch (e) { $("c-status").textContent = "tower unreachable"; }
+    finally { busy = false; }
   };
-  poll(); setInterval(poll, 2000);
+  poll(); setInterval(poll, 1000);
 }
 
 /* ---------------- render loop ---------------- */
