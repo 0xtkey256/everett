@@ -46,3 +46,16 @@ Run 5 winner `w20` (hypothesis "Word Boundary Logic"): `if next_length < max_len
 tokens, ~$0.002 of GPU time. Replay: `web/replays/real-1.json`.
 
 1 green out of 32 is the point: a single sample would almost certainly have missed it.
+
+
+## Live runs — mercantile (satellite tile pipeline), probe: tile of Tokyo Tower at z12 (truth x=3637, y=1613)
+
+| Bug | Run | green | red | stillborn | rounds | wall | note |
+|---|---|---|---|---|---|---|---|
+| sign flip in `_xy` (Tokyo → 35.6°S) | 1 | 0 | 12 | 20 | 1 + crash | 56 s | round-2 prompt exceeded 16k context → fixed |
+| sign flip | 2 | 0 | 3 | 29 | 1 | 45 s | whole 23 KB file in context |
+| sign flip | 3 | 0 | 23 | 17 | 2 (40 worlds) | 77 s | function-level localization; still unsolved by the 7B model |
+| `tile()` x/y swap (Tokyo → 80°S polar ice) | 4 | **4** | 11 | 17 | 1 | 53 s | winner `w07`, smallest diff; replay `web/replays/tokyo.json` |
+| x/y swap, via the live tower + tunnel | 5 | 0 | — | — | 2 | 39 s | live UI path verified; model found no fix this time |
+
+Success varies run to run with a 7B model; the replay of run 4 is unedited.

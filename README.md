@@ -4,14 +4,16 @@
 
 When CI goes red, Everett splits the broken build into **32 parallel worlds** on Daytona. In each one, an open model hosted on Nosana tries a *different* fix. The tests decide which world survives; every other world is thrown away. The agent doesn't guess — it branches, then observes.
 
-**Live demo / replay:** https://0xtkey256.github.io/Everett/?replay=demo
+**Watch a real run:** https://0xtkey256.github.io/everett/?replay=tokyo  ·  EN / 日本語 switch in the header
+
+**The demo:** a one-character bug in [mapbox/mercantile](https://github.com/mapbox/mercantile) — the map-tile library satellite-imagery pipelines use to find "which tile covers this place" — makes `tile()` return x and y swapped. Ask the pipeline for Tokyo Tower and it fetches **polar ice at 80°S**. Everett launches 32 worlds; each one runs the full test suite *and* asks its own patched code where Tokyo Tower is, and the wall shows the real satellite image every world would fetch. In the recorded run 4 of 32 worlds found the fix and the smallest diff was merged (`return Tile(ytile, xtile, zoom)` → `return Tile(xtile, ytile, zoom)`, 136/136 tests, 53 s).
 
 ## Why now
 Code is nearly free to write: agents now produce more changes than people can review, and source control is being rebuilt to absorb that volume. The bottleneck moved from *writing* to *choosing what to keep*. Execution environments should be **disposable by default** — spin up one per idea, run them all, merge the one that's proven. Everett is that selection layer.
 
 ## How it works
-1. **Base world** — a Daytona sandbox from a pre-built snapshot clones the repo, applies the breaking change and runs the suite (133 tests, 4 failing in the demo).
-2. **Hypotheses** — Qwen2.5-Coder-7B on Nosana reads the failing tests and source, and proposes 4 *different* root causes.
+1. **Base world** — a Daytona sandbox from a pre-built snapshot applies the breaking change and runs the suite (136 tests, 20 failing in the satellite demo) plus a probe: which tile is Tokyo Tower in?
+2. **Hypotheses** — function-level fault localization picks the relevant functions; Qwen2.5-Coder-7B on Nosana reads them with the failing tests and the observed symptom, and proposes 4 *different* root causes.
 3. **32 patches** — for each hypothesis, one request with `n=8` returns 8 candidate patches (SEARCH/REPLACE), at different temperatures.
 4. **Cheat filter (before anything runs)** — patches that edit tests or test config, or inject `skip`/`xfail`/`exit`, are disqualified. Patches that don't apply are discarded.
 5. **32 worlds** — 8 Daytona sandboxes × 4 isolated checkouts each run the full suite in parallel.
