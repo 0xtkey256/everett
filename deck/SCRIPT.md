@@ -1,6 +1,6 @@
 # Everett — pitch script (2:30)
 
-_≈ 407 words at ~150 words/min. Stage directions in [brackets]._
+_≈ 418 words at ~150 words/min. Stage directions in [brackets]._
 
 ## 1. Title  (0:00–0:15)
 
@@ -24,7 +24,7 @@ Here's how. CI fails. A small AI model suggests four causes and writes thirty-tw
 
 ## 6. Example: satellite imagery  (1:37–1:57)
 
-I work with satellite imagery at Solafune, so here's an example from our world. [switch to the live site] We broke one line of mercantile, an open-source map-tile library. Ask it for Tokyo Tower, and it downloads polar ice. Thirty-two worlds, four found the fix, and the smallest won: one line, all hundred thirty-six tests green, in fifty-three seconds. And it is not luck: four of five live runs found the fix. [back to the slides]
+I work with satellite imagery at Solafune, so here's an example from our world. [switch to the live site] We broke one line of mercantile, an open-source map-tile library. Ask it for Tokyo Tower, and it downloads polar ice. Thirty-two worlds, four found the fix, and the smallest won: one line, all hundred thirty-six tests green, in fifty-three seconds. Why thirty-two? One AI attempt fixes this bug under five percent of the time. With thirty-two worlds, five of six runs found it. [back to the slides]
 
 ## 7. Daytona & sandbox.fork()  (1:57–2:08)
 
