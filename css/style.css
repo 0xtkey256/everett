@@ -167,3 +167,69 @@ a { color: var(--blue); }
   .diff { font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ---------- satellite layer ---------- */
+.landing { position: relative; overflow: hidden; }
+.land-inner { position: relative; z-index: 1; }
+.fx-stars { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.fx-orbit { position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none; }
+.landing h1 { background: linear-gradient(100deg, #e8eef6 20%, #42e08a 45%, #e8eef6 70%); background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer-t 6s ease-in-out infinite; }
+@keyframes shimmer-t { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0 0; } }
+.sub b { color: var(--text); }
+.t-sat { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .8s, filter .8s;
+  filter: saturate(.6) brightness(.45); z-index: 0; }
+.t-sat.on { opacity: 1; }
+.tile > *:not(.t-sat) { position: relative; z-index: 1; }
+.tile.green .t-sat { filter: saturate(1.1) brightness(.85); }
+.tile.red .t-sat { filter: saturate(.4) brightness(.35) sepia(.4) hue-rotate(-30deg); }
+.t-lat { font: 700 11px var(--mono); padding: 1px 5px; border-radius: 4px; background: rgba(10,14,20,.75); justify-self: start; }
+.tile.green .t-lat { color: var(--green); }
+.tile.red .t-lat { color: #ff8a90; }
+.probe { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; margin-bottom: 10px; }
+.pr-img { margin: 0; position: relative; width: 150px; height: 96px; border-radius: 8px; overflow: hidden; border: 2px solid var(--line); }
+.pr-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pr-img.bad { border-color: var(--red); }
+.pr-img.good { border-color: var(--green); }
+.pr-img figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 7px; font: 11px var(--mono); background: rgba(10,14,20,.8);
+  display: flex; justify-content: space-between; }
+.pr-arrow { text-align: center; color: var(--muted); font-size: 15px; }
+.pr-arrow span { color: var(--text); font-weight: 700; }
+.col-body { display: grid; grid-template-columns: 260px 1fr; gap: 16px; align-items: start; }
+.col-sat { margin: 0; border-radius: 10px; overflow: hidden; border: 2px solid var(--green); position: relative; }
+.col-sat img { width: 100%; display: block; animation: zoomin 1.4s ease-out; }
+@keyframes zoomin { from { transform: scale(2.2); filter: blur(4px); } }
+.col-sat figcaption { position: absolute; bottom: 0; left: 0; right: 0; padding: 5px 8px; font: 12px var(--mono); background: rgba(10,14,20,.8); color: var(--green); }
+.col-sat.none { display: none; }
+@media (max-width: 760px) { .probe { grid-template-columns: 1fr 1fr; } .pr-arrow { grid-column: 1 / -1; order: -1; }
+  .pr-img { width: 100%; } .col-body { grid-template-columns: 1fr; } }
+
+/* big "broken vs truth" stage while the worlds are being written */
+.probe.solo { grid-template-columns: 1fr auto 1fr; gap: 28px; margin: 4vh auto 0; max-width: 1100px; }
+.probe.solo .pr-img { width: 100%; height: auto; aspect-ratio: 1 / 1; max-height: 58vh; border-width: 3px; }
+.probe.solo .pr-img figcaption { font-size: 15px; padding: 8px 12px; }
+.probe.solo .pr-arrow { font-size: 22px; max-width: 220px; line-height: 1.5; }
+.pr-img::after { content: ""; position: absolute; left: 0; right: 0; height: 22%; top: -25%; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(66,224,138,.25), rgba(66,224,138,.6) 50%, transparent 52%);
+  animation: sweep 2.6s linear infinite; mix-blend-mode: screen; }
+.pr-img.bad::after { background: linear-gradient(180deg, transparent, rgba(217,67,75,.25), rgba(217,67,75,.6) 50%, transparent 52%); }
+@keyframes sweep { to { top: 105%; } }
+.pr-img.bad { animation: alarm 1.4s ease-in-out infinite; }
+@keyframes alarm { 50% { box-shadow: 0 0 28px rgba(217,67,75,.55); } }
+.pr-img.good { box-shadow: 0 0 24px rgba(66,224,138,.35); }
+.probe.solo .pr-arrow::after { content: "→"; display: block; font-size: 44px; color: var(--green); animation: nudge 1.2s ease-in-out infinite; }
+@keyframes nudge { 50% { transform: translateX(10px); } }
+
+/* satellite tile as the card background (more robust than an absolutely-positioned img inside a grid) */
+.t-sat { display: none !important; }
+.tile.has-sat { background-image: linear-gradient(rgba(10,14,20,.55), rgba(10,14,20,.78)), var(--sat); background-size: cover; background-position: center; }
+.tile.has-sat.green { background-image: linear-gradient(rgba(10,14,20,.05), rgba(10,14,20,.55)), var(--sat); }
+.tile.has-sat.red { background-image: linear-gradient(rgba(60,10,14,.55), rgba(10,14,20,.8)), var(--sat); }
+.tile.has-sat { animation: satin .9s ease-out; }
+@keyframes satin { from { filter: brightness(2.2) saturate(0); } to { filter: none; } }
+
+.lang-btn { margin-left: 10px; background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 999px;
+  padding: 4px 10px; font-size: 11px; cursor: pointer; white-space: nowrap; }
+.lang-btn:hover { border-color: var(--green); color: var(--green); }
+.land-lang { position: absolute; top: 18px; right: 18px; }
+.lang-btn b { font-weight: 700; color: var(--green); }

@@ -32,7 +32,7 @@ export function reduce(s, e) {
         w.total = e.total || w.total; w.tail = e.tail || w.tail; }
       break;
     case "universe.observed":
-      if (w) { w.status = e.status; w.failing = e.failing; w.firstError = e.first_error;
+      if (w) { w.status = e.status; w.failing = e.failing; w.firstError = e.first_error; w.tile = e.tile || null;
         if (e.status === "stillborn" && !w.reason) w.reason = e.first_error; }
       break;
     case "round.started": s.round = e.round; break;
