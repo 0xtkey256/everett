@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=154938">
+<link rel="stylesheet" href="css/style.css?v=155454">
 </head>
 <body>
 
@@ -92,6 +92,8 @@
 
   <div class="qr" id="qr-badge"><div id="qr"></div><span data-i18n="qr">watch on your phone</span></div>
 
+  <div class="banner" id="banner" aria-live="polite"><div class="b-kicker" id="b-k"></div><div class="b-main" id="b-m"></div></div>
+
   <div class="collapse" id="collapse" hidden>
     <div class="col-card">
       <div class="col-head">
@@ -107,13 +109,17 @@
         <figure class="col-sat"><img id="col-sat" alt="Satellite tile fetched by the winning world"><figcaption id="col-sat-cap"></figcaption></figure>
         <pre class="diff mono" id="col-diff"></pre>
       </div>
-      <button class="btn sm col-close" id="col-close" type="button" data-i18n="back">Back to the wall</button>
+      <div class="col-actions">
+        <button class="btn sm primary" id="col-patch" type="button" data-i18n="dl_patch">Download patch</button>
+        <button class="btn sm" id="col-pr" type="button" data-i18n="copy_pr">Copy PR description</button>
+        <button class="btn sm col-close" id="col-close" type="button" data-i18n="back">Back to the wall</button>
+      </div>
     </div>
   </div>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/motion.js?v=154938"></script>
-<script type="module" src="js/app.js?v=154938"></script>
+<script src="js/motion.js?v=155454"></script>
+<script type="module" src="js/app.js?v=155454"></script>
 </body>
 </html>

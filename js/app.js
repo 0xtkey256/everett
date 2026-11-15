@@ -1,6 +1,6 @@
-import { initialState, reduce, liveSandboxes, median, REASON_TEXT } from "./reducer.js?v=154938";
-import { t as tr, applyStatic, onToggle } from "./i18n.js?v=154938";
-import { Replay, connectLive } from "./replay.js?v=154938";
+import { initialState, reduce, liveSandboxes, median, REASON_TEXT } from "./reducer.js?v=155454";
+import { t as tr, applyStatic, onToggle } from "./i18n.js?v=155454";
+import { Replay, connectLive } from "./replay.js?v=155454";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -8,12 +8,21 @@ let S = initialState();
 let dirty = true;
 const tiles = new Map();      // world id -> {el, parts}
 let collapseShown = false;
+let banners = { red: false, launch: false, merge: false };
 
 /* ---------------- boot ---------------- */
 const replayId = params.get("replay");
 const src = params.get("src");
 const api = (params.get("api") || "").replace(/\/$/, "");
 const admin = new URLSearchParams(location.hash.slice(1)).get("admin");   // fragment: never sent anywhere
+document.addEventListener("keydown", (e) => {
+  if (e.target.closest && e.target.closest("input, textarea")) return;
+  const k = e.key.toLowerCase();
+  if (k === "f") document.documentElement.requestFullscreen?.();
+  else if (k === "l") document.getElementById("lang-btn")?.click();
+  else if (k === " " && !$("c-play").hidden && !$("view").hidden) { e.preventDefault(); $("c-play").click(); }
+  else if (k === "r" && !$("c-restart").hidden && !$("view").hidden) $("c-restart").click();
+});
 applyStatic();
 onToggle(() => { dirty = true; probeShown = false; tiles.forEach((x) => { x.status = null; }); });
 // the landing page has its own toggle button; mirror clicks onto the main one
@@ -33,6 +42,7 @@ if (!replayId && !src && !api) {
 
 function apply(e) { reduce(S, e); dirty = true; }
 function reset() {
+  banners = { red: false, launch: false, merge: false };
   probeShown = false; $("probe").hidden = true;
   S = initialState(); tiles.clear(); $("wall").innerHTML = ""; $("collapse").hidden = true; collapseShown = false; dirty = true;
 }
@@ -125,6 +135,7 @@ function render() {
   $("m-tokens").textContent = s.stats ? fmtK(s.stats.tokens_prompt + s.stats.tokens_completion) : "—";
   $("phase").innerHTML = phaseText(s);
   renderSteps(s);
+  renderBanners(s);
   renderProbe(s);
   $("probe").classList.toggle("solo", s.order.length === 0);
   for (const id of s.order) renderTile(s.worlds[id]);
@@ -204,11 +215,14 @@ function markCollapse(s) {
   collapseShown = true;
   const c = s.collapse;
   let k = 0;
+  const wr = c.winner_id && tiles.get(c.winner_id) ? tiles.get(c.winner_id).el.getBoundingClientRect() : null;
   for (const id of s.order) {
     const t = tiles.get(id);
     if (!t) continue;
-    if (id === c.winner_id) t.el.classList.add("winner");
-    else { t.el.style.transitionDelay = `${(k++) * 20}ms`; }
+    if (id === c.winner_id) { t.el.classList.add("winner"); continue; }
+    const r = t.el.getBoundingClientRect();
+    const d = wr ? Math.hypot(r.x - wr.x, r.y - wr.y) : (k++) * 40;   // shockwave outward from the winner
+    t.el.style.transitionDelay = `${Math.round(d * 0.9)}ms`;
   }
   if (!c.winner_id) return;
   setTimeout(() => {
@@ -228,8 +242,21 @@ function markCollapse(s) {
       return cls ? `<span class="${cls}">${esc(l)}</span>` : esc(l) + "\n";
     }).join("");
     $("collapse").hidden = false;
-  }, 900);
+  }, 2300);
   $("col-close").onclick = () => { $("collapse").hidden = true; };
+  // the result is a pull request: a patch file and a ready-to-paste description
+  $("col-patch").onclick = () => {
+    const blob = new Blob([c.diff], { type: "text/x-diff" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = `everett-${c.winner_id}.patch`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+  $("col-pr").onclick = async () => {
+    const b = $("col-pr");
+    try { await navigator.clipboard.writeText(c.pr_markdown); b.textContent = tr("copied"); }
+    catch { b.textContent = "⚠"; }
+    setTimeout(() => { b.textContent = tr("copy_pr"); }, 1600);
+  };
 }
 
 /* ---------------- branch graph ---------------- */
@@ -276,6 +303,26 @@ function renderGraph(s) {
   svg.innerHTML = parts.join("");
 }
 
+/* ---------------- chapter banners (readable from the back of the room) ---------------- */
+function showBanner(kicker, main, tone) {
+  const b = $("banner");
+  $("b-k").textContent = kicker; $("b-m").textContent = main;
+  b.className = "banner " + tone;
+  void b.offsetWidth;            // restart the animation
+  b.classList.add("show");
+}
+function renderBanners(s) {
+  if (s.base && !banners.red) { banners.red = true; showBanner(tr("b_red_k"), tr("b_red_m", { n: s.base.failing_tests.length }), "red"); }
+  if (s.order.length && !banners.launch) {
+    banners.launch = true; showBanner("Daytona", tr("b_launch_m", { n: s.run?.n_worlds || 32 }), "blue");
+  }
+  if (s.collapse && !banners.merge) {
+    banners.merge = true;
+    if (s.collapse.winner_id) showBanner(tr("b_merge_k"), tr("b_merge_m", { d: Math.max(0, s.counters.created - 1) }), "green");
+    else showBanner(tr("b_none_k"), tr("b_none_m", { c: s.counters.created }), "red");
+  }
+}
+
 /* ---------------- progress stepper ---------------- */
 function renderSteps(s) {
   const k = s.collapse ? 3 : s.order.length ? 2 : Object.keys(s.hyps).length ? 1 : s.base ? 0 : -1;
@@ -303,7 +350,21 @@ function renderProbe(s) {
 }
 
 /* ---------------- helpers ---------------- */
-function setNum(id, v) { const el = $(id); if (el.textContent !== String(v)) el.textContent = v; }
+const shownNum = {};
+function setNum(id, v) {
+  const el = $(id);
+  const from = shownNum[id] ?? (Number(el.textContent) || 0);
+  if (from === v) return;
+  shownNum[id] = v;
+  if (typeof v !== "number" || v < from || v - from > 80) { el.textContent = v; return; }
+  const box = el.parentElement; box.classList.remove("bump"); void box.offsetWidth; box.classList.add("bump");
+  const t0 = performance.now(), dur = 380;
+  (function step(t) {
+    const k = Math.min(1, (t - t0) / dur);
+    el.textContent = Math.round(from + (v - from) * (1 - Math.pow(1 - k, 3)));
+    if (k < 1 && shownNum[id] === v) requestAnimationFrame(step);
+  })(t0);
+}
 function fmtK(n) { return n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n); }
 function esc(x) { return String(x ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 function drawQR() {
