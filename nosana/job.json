@@ -1,0 +1,21 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": { "trigger": "cli", "system_requirements": { "required_vram": 20 } },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "coder",
+      "args": {
+        "image": "docker.io/vllm/vllm-openai:v0.8.5",
+        "cmd": ["--model", "Qwen/Qwen2.5-Coder-7B-Instruct", "--served-model-name", "coder", "--port", "9000",
+                "--max-model-len", "16384", "--gpu-memory-utilization", "0.90"],
+        "gpu": true,
+        "expose": [
+          { "port": 9000,
+            "health_checks": [ { "type": "http", "path": "/v1/models", "method": "GET", "expected_status": 200, "continuous": true } ] }
+        ]
+      }
+    }
+  ]
+}

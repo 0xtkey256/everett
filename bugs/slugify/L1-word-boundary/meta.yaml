@@ -1,0 +1,9 @@
+repo: https://github.com/un33k/python-slugify.git
+commit: 35aca63fc2672cba2c739ff6dff685a4f26a4f9a
+level: L1
+description: "word_boundary truncation drops a word that fits exactly — an off-by-one (< instead of <=)."
+failing_tests:
+  - tests/test_modern_word_boundary.py::ModernWordBoundaryTests::test_skipped_words_keep_the_existing_order_policy
+  - tests/test_release.py::ReleaseRegressionTests::test_actual_separator_width_and_literal_characters
+  - tests/test_release.py::ReleaseRegressionTests::test_empty_separator_preserves_word_boundaries
+  - tests/test_release.py::SplitCoverageTests::test_modern_word_boundary_empty_token

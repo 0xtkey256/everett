@@ -1,0 +1,6 @@
+pyproject.toml
+everett.egg-info/PKG-INFO
+everett.egg-info/SOURCES.txt
+everett.egg-info/dependency_links.txt
+everett.egg-info/requires.txt
+everett.egg-info/top_level.txt
