@@ -30,3 +30,19 @@ Errors seen:
 To increase concurrency limits, upgrade your organization's Tier by visiting https://app.daytona.io/dashboard/limits.`
 - `estError: Failed to create sandbox: Total CPU limit exceeded. Maximum allowed: 10.
 To increase concurrency limits, upgrade your organization's Tier by visiting https://app.daytona.io/dashboard/limits.`
+
+## Live runs — slugify L1 (word-boundary off-by-one), Qwen2.5-Coder-7B on Nosana, 32 worlds on 8 Daytona sandboxes
+
+| Run | Context / parser change | green | red | stillborn (no_match / parse / other) | wall |
+|---|---|---|---|---|---|
+| 1 | all sources, placeholder path in prompt | 0 | 0 | 32 (29 / 3 / 0) | 46 s |
+| 2 | real path in prompt, retarget by unique match | 0 | 9 | 23 (incl. 7 collection failures) | 54 s |
+| 3 | + failing test bodies in context | 0 | 10 | 22 | 46 s |
+| 4 | + context = 2 most relevant files only | 0 | 5 | 27 (22 no_match) | 44 s |
+| 5 | + whitespace-tolerant unique match with re-indent | **1** | 15 | 16 (13 / 2 / 1 collect_shrank) | **35 s** |
+
+Run 5 winner `w20` (hypothesis "Word Boundary Logic"): `if next_length < max_length:` → `if next_length <= max_length:` —
+133/133 tests collected, all 4 failing tests pass, 0 regressions. Nosana: 5 requests, 25.8k prompt + 5.5k completion
+tokens, ~$0.002 of GPU time. Replay: `web/replays/real-1.json`.
+
+1 green out of 32 is the point: a single sample would almost certainly have missed it.

@@ -10,6 +10,7 @@ import time
 from dataclasses import dataclass, field
 
 from . import patches as P
+from .context import rank_sources, test_snippets
 from .events import (BaseReady, BaseTests, Collapse, EventBus, Hypothesis, HypothesesProposed, PatchApplied,
                      PatchProposed, PatchRejected, RoundStarted, RunFailed, RunFinished, RunStarted, RunStats,
                      TestProgress, UniverseDisposed, UniverseForked, UniverseObserved)
@@ -75,15 +76,19 @@ async def orchestrate(spec: Spec, bus: EventBus, worlds, llm, model_name: str = 
                 cache[path] = worlds.read_file(path)
             return cache[path]
 
+        tests_src = test_snippets(sorted(base_failing), read)
+        ordered = rank_sources(sources, tests_src, read)[:2]   # the two most relevant files, whole
+        sources = ordered
         ctx_parts, used = [], 0
-        for path in sources:
+        for path in ordered:
             body = read(path) or ""
             if used + len(body) > spec.context_chars:
                 continue
             ctx_parts.append(f"### {path}\n```python\n{body}\n```")
             used += len(body)
-        context = (f"Repository files (source, editable):\n" + "\n".join(ctx_parts) +
-                   f"\n\nFailing tests (do not edit tests):\n" + "\n".join(sorted(base_failing)) +
+        context = (f"Repository files (source, editable — edit ONLY these files):\n" + "\n".join(ctx_parts) +
+                   f"\n\nFailing tests (reference only — never edit tests):\n```python\n{tests_src}\n```\n" +
+                   "\n".join(sorted(base_failing)) +
                    f"\n\nFirst error: {base.first_error}\n\nTest output tail:\n{base.log[-2500:]}")
 
         stage = "hypotheses"
@@ -105,7 +110,7 @@ async def orchestrate(spec: Spec, bus: EventBus, worlds, llm, model_name: str = 
                 bus.emit(UniverseForked(id=w.id, parent_id=w.parent, round=w.round, fork_ms=0, hypothesis_id=w.hyp,
                                         sandbox_id=box.id[:8]))
                 rd = lambda p: base_files.get(p) if p in base_files else read(p)
-                patch = P.apply(text, rd)
+                patch = P.apply(text, rd, candidates=sources)
                 files_touched = list(patch.files) or [b.path for b in P.parse(text)][:3]
                 bus.emit(PatchProposed(id=w.id, files=files_touched, lines_added=patch.added, lines_removed=patch.removed))
                 if patch.reject:
@@ -144,7 +149,7 @@ async def orchestrate(spec: Spec, bus: EventBus, worlds, llm, model_name: str = 
 
         async def gen_and_run(h, temp):
             nonlocal counter
-            texts = await llm.patches(context, h, per, temp)
+            texts = await llm.patches(context, h, per, temp, example_path=ordered[0] if ordered else "pkg/module.py")
             for text in texts:
                 wid = f"w{counter:02d}"
                 counter += 1
@@ -174,7 +179,8 @@ async def orchestrate(spec: Spec, bus: EventBus, worlds, llm, model_name: str = 
                          f"Still failing: {', '.join(po.failing[:6])}\nImprove on it (the files below already include it).")
                 ctx2 = context + "\n\nCurrent content of changed files:\n" + "\n".join(
                     f"### {p}\n```python\n{c}\n```" for p, c in pw.files.items())
-                texts = await llm.patches(ctx2, h, spec.beam_children, 0.7, extra)
+                texts = await llm.patches(ctx2, h, spec.beam_children, 0.7, extra,
+                                          example_path=next(iter(pw.files), ordered[0] if ordered else "pkg/module.py"))
                 for j, text in enumerate(texts):
                     tasks.append(asyncio.create_task(
                         run_world(World(f"{pw.id}.{j + 1}", pw.id, rnd, pw.hyp), text, dict(pw.files))))

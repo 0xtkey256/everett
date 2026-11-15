@@ -10,9 +10,10 @@ import httpx
 from . import config
 
 SYSTEM_PATCH = """You fix a failing Python test suite by editing SOURCE files only.
-Output ONLY one or more SEARCH/REPLACE blocks, nothing else:
+Output ONLY one or more SEARCH/REPLACE blocks, nothing else. The first line of each block is the real
+relative path of the file you edit, exactly as given in the context headers (for example {path}):
 
-path/to/file.py
+{path}
 <<<<<<< SEARCH
 exact lines copied from the current file
 =======
@@ -64,8 +65,8 @@ class Nosana:
         return [{"id": "h1", "label": "generic fix", "rationale": "hypothesis generation failed"}]
 
     async def patches(self, context: str, hypothesis: dict, n: int, temperature: float,
-                      extra: str = "") -> list[str]:
-        msg = [{"role": "system", "content": SYSTEM_PATCH},
+                      extra: str = "", example_path: str = "pkg/module.py") -> list[str]:
+        msg = [{"role": "system", "content": SYSTEM_PATCH.replace("{path}", example_path)},
                {"role": "user", "content": f"{context}\n\nHypothesis to pursue: {hypothesis['label']} — "
                 f"{hypothesis.get('rationale', '')}\n{extra}\nWrite the fix."}]
         return await self._chat(msg, n=n, temperature=temperature, max_tokens=700)

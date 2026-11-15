@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 import xml.etree.ElementTree as ET
 
-CMD = "python -m pytest -q -p no:cacheprovider --tb=line -o console_output_style=classic --junitxml=/tmp/r.xml"
+CMD = "python -m pytest -q -p no:cacheprovider --color=no --tb=short -o console_output_style=classic --junitxml=/tmp/r.xml"
 PROGRESS_CHARS = set(".FEsx")
 _LINE = re.compile(r"^(?:\S+\.py\s+)?([.FEsx]+)(?:\s+\[\s*\d+%\])?\s*$")
 

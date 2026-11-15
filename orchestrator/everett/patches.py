@@ -30,10 +30,15 @@ class Patch:
     reject: str | None = None
 
 
+_FENCE = re.compile(r"^\s*```[A-Za-z0-9_-]*\s*$", re.M)
+_PREFIX = re.compile(r"^(?:#+\s*|\*+\s*|File:\s*|file:\s*|Path:\s*)+")
+
+
 def parse(text: str) -> list[Block]:
     out = []
-    for m in BLOCK.finditer(text or ""):
-        path = m.group("path").strip().strip("`").lstrip("./")
+    text = _FENCE.sub("", text or "")
+    for m in BLOCK.finditer(text):
+        path = _PREFIX.sub("", m.group("path").strip()).strip("`*: ").lstrip("./")
         out.append(Block(path, m.group("search"), m.group("replace")))
     return out
 
@@ -51,12 +56,54 @@ def _replace_once(src: str, search: str, replace: str) -> str | None:
     s2, q2 = strip(src), strip(search)
     if q2 and s2.count(q2) == 1:
         return s2.replace(q2, strip(replace), 1)
-    return None
+    return _replace_reindent(src, search, replace)
 
 
-def apply(text: str, read) -> Patch:
-    """`read(path) -> str | None` returns the current file content from the base world."""
+def _indent(line: str) -> str:
+    return line[: len(line) - len(line.lstrip())]
+
+
+def _replace_reindent(src: str, search: str, replace: str) -> str | None:
+    """Match line-by-line ignoring surrounding whitespace (must be unique), then shift the replacement
+    by the indentation difference between the model's first SEARCH line and the real file."""
+    s_lines = src.split("\n")
+    q_lines = [l for l in search.split("\n")]
+    while q_lines and not q_lines[0].strip():
+        q_lines.pop(0)
+    while q_lines and not q_lines[-1].strip():
+        q_lines.pop()
+    if not q_lines:
+        return None
+    key = [l.strip() for l in q_lines]
+    hits = [i for i in range(len(s_lines) - len(key) + 1)
+            if [l.strip() for l in s_lines[i:i + len(key)]] == key]
+    if len(hits) != 1:
+        return None
+    i = hits[0]
+    real, model = _indent(s_lines[i]), _indent(q_lines[0])
+    out = []
+    for l in replace.split("\n"):
+        if not l.strip():
+            out.append("")
+        elif l.startswith(model):
+            out.append(real + l[len(model):])
+        else:
+            out.append(real + l.lstrip())
+    while out and not out[-1].strip() and len(out) > 1:
+        out.pop()
+    return "\n".join(s_lines[:i] + out + s_lines[i + len(key):])
+
+
+def apply(text: str, read, candidates: list[str] | None = None) -> Patch:
+    """`read(path) -> str | None` returns the current file content from the base world.
+    `candidates`: known source files; a block whose path doesn't exist is re-targeted to the single
+    candidate where its SEARCH text matches exactly once (models sometimes echo a placeholder path)."""
     blocks = parse(text)
+    for b in blocks:
+        if read(b.path) is None and candidates:
+            hits = [c for c in candidates if (src := read(c)) is not None and _replace_once(src, b.search, b.replace) is not None]
+            if len(hits) == 1:
+                b.path = hits[0]
     if not blocks:
         return Patch(reject="parse_error")
     for b in blocks:

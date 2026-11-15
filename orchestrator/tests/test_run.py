@@ -67,7 +67,7 @@ class FakeLLM:
         assert "pkg/mod.py" in context and "tests/test_a.py::test_edge" in context
         return [{"id": f"h{i + 1}", "label": f"idea {i + 1}", "rationale": ""} for i in range(k)]
 
-    async def patches(self, context, h, n, temperature, extra=""):
+    async def patches(self, context, h, n, temperature, extra="", example_path=""):
         self.requests += 1
         src = self.r2 if extra else self.r1
         return [src[i % len(src)] for i in range(n)]
