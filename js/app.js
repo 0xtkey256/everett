@@ -67,8 +67,8 @@ function render() {
   setNum("m-disposed", s.counters.disposed);
   setNum("m-merged", s.counters.merged);
   setNum("m-boxes", liveSandboxes(s) + (s.base && !s.collapse ? 1 : 0));
-  const m = median(s.forkMs);
-  $("m-fork").textContent = m == null ? "—" : (m / 1000).toFixed(1) + "s";
+  const m = s.stats?.fork_ms_p50 || median(s.forkMs.filter((x) => x > 0));
+  $("m-fork").textContent = !m ? "—" : (m / 1000).toFixed(1) + "s";
   $("m-time").textContent = (s.stats ? s.stats.wall_ms / 1000 : s.ts).toFixed(1) + "s";
   $("m-tokens").textContent = s.stats ? fmtK(s.stats.tokens_prompt + s.stats.tokens_completion) : "—";
   $("phase").innerHTML = phaseText(s);
@@ -153,7 +153,7 @@ function markCollapse(s) {
     $("col-id").textContent = `${c.winner_id} · round ${w?.round ?? ""} · ${w?.box ?? ""}`;
     $("col-hyp").textContent = S.hyps[c.hypothesis_id]?.label || c.hypothesis_id || "";
     const total = S.tests.length || w?.total || 0;
-    $("col-tests").textContent = `${w?.passed ?? total}/${total}`;
+    $("col-tests").textContent = `${total - (w?.failed ?? 0)}/${total}`;
     $("col-worlds").textContent = s.counters.created;
     $("col-time").textContent = s.ts.toFixed(0) + "s";
     $("col-diff").innerHTML = c.diff.split("\n").map((l) => {
