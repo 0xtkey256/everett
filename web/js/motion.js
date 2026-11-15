@@ -31,7 +31,11 @@
         ctx.fillStyle = "rgba(200,225,255," + a.toFixed(3) + ")";
         ctx.fillRect(s.x, y, s.z * 1.6 * DPR, s.z * 1.6 * DPR);
       }
-      if (!shoot && Math.random() < 0.004) shoot = { x: Math.random() * w, y: Math.random() * h * 0.5, l: 0 };
+      // during a run the starfield is only a quiet backdrop: no shooting stars, dimmed
+      var view = document.getElementById("view"), sim = !!(view && !view.hidden);
+      c.style.opacity = sim ? "0.35" : "1";
+      if (sim) shoot = null;
+      if (!sim && !shoot && Math.random() < 0.004) shoot = { x: Math.random() * w, y: Math.random() * h * 0.5, l: 0 };
       if (shoot) {
         shoot.l += 14 * DPR;
         var g = ctx.createLinearGradient(shoot.x, shoot.y, shoot.x - 120 * DPR, shoot.y - 40 * DPR);
