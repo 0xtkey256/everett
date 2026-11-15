@@ -1,6 +1,6 @@
-import { initialState, reduce, liveSandboxes, median, REASON_TEXT } from "./reducer.js?v=153223";
-import { t as tr, applyStatic, onToggle } from "./i18n.js?v=153223";
-import { Replay, connectLive } from "./replay.js?v=153223";
+import { initialState, reduce, liveSandboxes, median, REASON_TEXT } from "./reducer.js?v=154325";
+import { t as tr, applyStatic, onToggle } from "./i18n.js?v=154325";
+import { Replay, connectLive } from "./replay.js?v=154325";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -123,6 +123,7 @@ function render() {
   $("m-time").textContent = (s.stats ? s.stats.wall_ms / 1000 : s.ts).toFixed(1) + "s";
   $("m-tokens").textContent = s.stats ? fmtK(s.stats.tokens_prompt + s.stats.tokens_completion) : "—";
   $("phase").innerHTML = phaseText(s);
+  renderSteps(s);
   renderProbe(s);
   $("probe").classList.toggle("solo", s.order.length === 0);
   for (const id of s.order) renderTile(s.worlds[id]);
@@ -272,6 +273,16 @@ function renderGraph(s) {
   parts.push(`<circle cx="10" cy="${yBase}" r="5" fill="${s.collapse?.winner_id ? "#42e08a" : "#d9434b"}"/>`);
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.innerHTML = parts.join("");
+}
+
+/* ---------------- progress stepper ---------------- */
+function renderSteps(s) {
+  const k = s.collapse ? 3 : s.order.length ? 2 : Object.keys(s.hyps).length ? 1 : s.base ? 0 : -1;
+  const merged = !!(s.stats && s.collapse && s.collapse.winner_id);
+  document.querySelectorAll("#steps .step").forEach((el, i) => {
+    el.classList.toggle("done", i < k || (i === 3 && merged));
+    el.classList.toggle("on", i === k && !(i === 3 && merged));
+  });
 }
 
 /* ---------------- satellite probe ---------------- */

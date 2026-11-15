@@ -233,3 +233,33 @@ a { color: var(--blue); }
 .lang-btn:hover { border-color: var(--green); color: var(--green); }
 .land-lang { position: absolute; top: 18px; right: 18px; }
 .lang-btn b { font-weight: 700; color: var(--green); }
+
+/* ---------- plain-language landing ---------- */
+.land-inner { max-width: 940px; }
+.how { list-style: none; padding: 0; margin: 28px 0 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.how li, .u-card { background: rgba(18, 24, 35, .88); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.how .n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--green); color: #06110b;
+  font: 800 14px var(--mono); }
+.how b { display: block; font-size: 17px; margin: 8px 0 4px; }
+.how p, .u-card p { margin: 0; color: #b7c3d3; font-size: 14px; line-height: 1.55; }
+.u-card b { color: var(--green); font-size: 15px; }
+.u-card p { font-size: 13.5px; margin-top: 4px; }
+.u-card code { font-family: var(--mono); color: var(--text); }
+.example { margin: 16px 0 0; color: #c9d4e2; font-size: 15px; line-height: 1.6; border-left: 3px solid var(--green); padding-left: 12px; }
+.under { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+@media (max-width: 760px) { .how, .under { grid-template-columns: 1fr; } }
+
+/* ---------- run view: progress stepper + legend ---------- */
+.steps { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 0 8px; padding: 0; }
+.step { display: flex; align-items: center; gap: 9px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel);
+  color: var(--muted); font-weight: 600; font-size: 15px; transition: border-color .3s, color .3s, box-shadow .3s; }
+.step .n { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--dim); color: var(--text);
+  font: 700 12px var(--mono); flex: none; }
+.step.on { border-color: var(--green); color: var(--text); box-shadow: 0 0 18px rgba(66, 224, 138, .25); }
+.step.on .n { background: var(--green); color: #06110b; animation: pulse-n 1.2s ease-in-out infinite; }
+@keyframes pulse-n { 50% { transform: scale(1.18); } }
+.step.done { color: var(--text); }
+.step.done .n { background: rgba(66, 224, 138, .22); color: var(--green); }
+.legend { color: var(--muted); font-size: 12px; margin: 2px 0 8px; }
+@media (max-width: 760px) { .steps { grid-template-columns: repeat(2, 1fr); } .step { font-size: 12px; } }
+.tag b { white-space: nowrap; }

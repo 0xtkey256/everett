@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=153223">
+<link rel="stylesheet" href="css/style.css?v=154325">
 </head>
 <body>
 
@@ -19,8 +19,8 @@
   <div class="land-inner"><button class="lang-btn mono land-lang" id="lang-btn-land" type="button" aria-label="Switch language">EN / 日本語</button>
     <p class="mono eyebrow" data-i18n="eyebrow">daytona hacksprint · tokyo</p>
     <h1>Everett</h1>
-    <p class="tag" data-i18n="tag">Generate many. Run all. <b>Keep what's proven.</b></p>
-    <p class="sub" data-i18n="sub">A one-character bug in a map-tile library sends a satellite-imagery pipeline to the wrong hemisphere — every image of Tokyo comes back as open ocean. Everett launches <b>32 parallel worlds on Daytona</b>, lets an open coding model on <b>Nosana</b> try a different fix in each, and shows the satellite image every world actually fetches. The tests decide which world is real; the other 31 are thrown away.</p>
+    <p class="tag" data-i18n="tag">CI is red? Try 32 fixes at once. <b>Keep only what the tests prove.</b></p>
+    <p class="sub" data-i18n="sub">When your tests fail, Everett opens <b>32 parallel worlds</b> — isolated sandboxes on <b>Daytona</b> — and an open AI model on our own <b>Nosana</b> GPU writes a different fix in each. Every world runs the full test suite; only the fix that passes everything is kept.</p>
     <div class="land-ctas">
       <a class="btn primary" href="?replay=tokyo" data-i18n="cta_real">Watch a real run</a>
       <a class="btn" href="?replay=real-1">python-slugify run</a>
@@ -28,6 +28,16 @@
         <input id="live-src" type="url" placeholder="SSE URL …/runs/&lt;id&gt;/events" aria-label="Live event stream URL" required>
         <button class="btn" type="submit" data-i18n="cta_live">Connect live</button>
       </form>
+    </div>
+    <ol class="how">
+      <li><span class="n">1</span><b data-i18n="how1t">CI goes red</b><p data-i18n="how1">A test fails after a change. Normally someone stops, reads logs and guesses.</p></li>
+      <li><span class="n">2</span><b data-i18n="how2t">32 worlds, 32 fixes</b><p data-i18n="how2">Each world is an isolated Daytona sandbox with its own copy of the code and one AI-written fix.</p></li>
+      <li><span class="n">3</span><b data-i18n="how3t">The tests decide</b><p data-i18n="how3">The fix that passes every test — and breaks nothing else — is merged. The other 31 are thrown away.</p></li>
+    </ol>
+    <p class="example" data-i18n="example">Today's example comes from our world, satellite imagery: one wrong line makes a map-tile library send Tokyo to Antarctica. Every world shows the satellite image its fix would fetch.</p>
+    <div class="under">
+      <div class="u-card"><b>Daytona</b><p data-i18n="u_daytona">Each world runs in an isolated Daytona sandbox started from a pre-built snapshot (Python, repo, dependencies): 1 base + 8 sandboxes × 4 worlds = 32 worlds within a 10-vCPU account. A world starts in ~2 s and runs the full test suite in under 2 s; every sandbox is labelled and deleted after the run. Built for <code>sandbox.fork()</code> — a copy-on-write clone of a ready world.</p></div>
+      <div class="u-card"><b>Nosana</b><p data-i18n="u_nosana">The AI runs on one NVIDIA RTX 3090 (24 GB) rented from Nosana's decentralized GPU network. Our Nosana job is a container spec: vLLM 0.8.5 serving Qwen2.5-Coder-7B-Instruct behind an OpenAI-compatible HTTPS endpoint, health-checked on /v1/models. One request returns 8 different patches (n=8) in ~2.3 s — vLLM computes the shared prompt once and samples 8 fixes in parallel. $0.19/h: a whole run ≈ 35k tokens ≈ $0.003.</p></div>
     </div>
   </div>
 </section>
@@ -40,14 +50,21 @@
     <div class="meter big disposed"><span class="lab" data-i18n="m_disposed">thrown away</span><span class="val" id="m-disposed">0</span></div>
     <div class="meter big merged"><span class="lab" data-i18n="m_merged">merged</span><span class="val" id="m-merged">0</span></div>
     <div class="meter"><span class="lab" data-i18n="m_boxes">live sandboxes</span><span class="val" id="m-boxes">0</span></div>
-    <div class="meter"><span class="lab" data-i18n="m_fork">world start p50</span><span class="val" id="m-fork">—</span></div>
+    <div class="meter"><span class="lab" data-i18n="m_fork">world start (median)</span><span class="val" id="m-fork">—</span></div>
     <div class="meter"><span class="lab" data-i18n="m_time">elapsed</span><span class="val" id="m-time">0.0s</span></div>
-    <div class="meter"><span class="lab" data-i18n="m_tokens">nosana tokens</span><span class="val" id="m-tokens">—</span></div>
+    <div class="meter"><span class="lab" data-i18n="m_tokens">AI tokens · Nosana</span><span class="val" id="m-tokens">—</span></div>
   </header>
 
   <div class="stage">
     <div class="wall-wrap">
+      <ol class="steps" id="steps">
+        <li class="step"><span class="n">1</span><span data-i18n="step1">CI is red</span></li>
+        <li class="step"><span class="n">2</span><span data-i18n="step2">AI writes 32 fixes</span></li>
+        <li class="step"><span class="n">3</span><span data-i18n="step3">32 worlds run the tests</span></li>
+        <li class="step"><span class="n">4</span><span data-i18n="step4">Merge the proven fix</span></li>
+      </ol>
       <div class="phase mono" id="phase">waiting for the broken build…</div>
+      <p class="legend mono" data-i18n="legend">each tile = 1 world: 1 fix + the full test suite · ✓ passed everything · ✗ still failing · ⊘ disqualified or didn't apply</p>
       <div class="probe" id="probe" hidden>
         <figure class="pr-img bad"><img id="pr-bad" alt="Satellite tile fetched by the broken pipeline"><figcaption><b data-i18n="pr_bad">broken pipeline</b><span id="pr-bad-lat"></span></figcaption></figure>
         <div class="pr-arrow mono" id="pr-arrow"></div>
@@ -96,7 +113,7 @@
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/motion.js?v=153223"></script>
-<script type="module" src="js/app.js?v=153223"></script>
+<script src="js/motion.js?v=154325"></script>
+<script type="module" src="js/app.js?v=154325"></script>
 </body>
 </html>
