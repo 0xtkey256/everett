@@ -59,3 +59,9 @@ tokens, ~$0.002 of GPU time. Replay: `web/replays/real-1.json`.
 | x/y swap, via the live tower + tunnel | 5 | 0 | — | — | 2 | 39 s | live UI path verified; model found no fix this time |
 
 Success varies run to run with a 7B model; the replay of run 4 is unedited.
+| x/y swap, fork-first mode (fork refused → snapshot fallback) | 6 | **1** | 13 | 18 | 1 | 47 s | winner `w16`; replay `tokyo-run-a.json` |
+| x/y swap | 7 | **2** | 21 | 9 | 1 | 47 s | winner `w04`; replay `tokyo-run-b.json` |
+| x/y swap | 8 | **1** | 15 | 16 | 1 | 46 s | winner `w11`; replay `tokyo-run-c.json` |
+
+**Reliability on the x/y-swap bug: 4 of 5 live runs found the fix (runs 4, 6, 7, 8), ~46–53 s each; the miss was run 5.**
+Each green world is verified by the full suite (136 tests) and the Tokyo Tower probe; nothing is hand-picked.
