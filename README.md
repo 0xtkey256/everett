@@ -1,12 +1,12 @@
-# Everett — many-worlds debugging
+# Everett — many-worlds debugging for CI/CD
 
-**Generate many. Run all. Keep what's proven.**
+**CI is red? Try 32 fixes at once. Keep only what the tests prove.**
 
-When CI goes red, Everett splits the broken build into **32 parallel worlds** on Daytona. In each one, an open model hosted on Nosana tries a *different* fix. The tests decide which world survives; every other world is thrown away. The agent doesn't guess — it branches, then observes.
+When your tests fail, Everett opens 32 parallel worlds — isolated sandboxes on **Daytona** — and an open AI model on our own **Nosana** GPU writes a different fix in each. Every world runs the full test suite; only the fix that passes everything (and breaks nothing else) is merged. The other 31 are thrown away. The agent doesn't guess — it branches, then observes.
 
 **Watch a real run:** https://0xtkey256.github.io/everett/?replay=tokyo  ·  EN / 日本語 switch in the header
 
-**The demo:** a one-character bug in [mapbox/mercantile](https://github.com/mapbox/mercantile) — the map-tile library satellite-imagery pipelines use to find "which tile covers this place" — makes `tile()` return x and y swapped. Ask the pipeline for Tokyo Tower and it fetches **polar ice at 80°S**. Everett launches 32 worlds; each one runs the full test suite *and* asks its own patched code where Tokyo Tower is, and the wall shows the real satellite image every world would fetch. In the recorded run 4 of 32 worlds found the fix and the smallest diff was merged (`return Tile(ytile, xtile, zoom)` → `return Tile(xtile, ytile, zoom)`, 136/136 tests, 53 s).
+**Today's example comes from the satellite-imagery world:** a one-line bug in [mapbox/mercantile](https://github.com/mapbox/mercantile) (the map-tile library imagery pipelines use to find "which tile covers this place") makes `tile()` return x and y swapped — ask for Tokyo Tower and you get **polar ice at 80°S**. Every world also asks its own patched code where Tokyo Tower is, and the wall shows the real satellite image each world would fetch. In the recorded run 4 of 32 worlds found the fix and the smallest diff was merged (`return Tile(ytile, xtile, zoom)` → `return Tile(xtile, ytile, zoom)`, 136/136 tests, 53 s).
 
 ## Why now
 Code is nearly free to write: agents now produce more changes than people can review, and source control is being rebuilt to absorb that volume. The bottleneck moved from *writing* to *choosing what to keep*. Execution environments should be **disposable by default** — spin up one per idea, run them all, merge the one that's proven. Everett is that selection layer.
@@ -28,7 +28,7 @@ The UI is rebuilt entirely from an event stream, so the same screen plays live (
 | | Where | What it does |
 |---|---|---|
 | **Daytona** | `orchestrator/everett/worlds.py`, `scripts/build_snapshot.py`, `scripts/probe_*.py` | Pre-built snapshot (Python 3.12 + repo + deps). 1 base + 8 world sandboxes created in parallel (~1.4–2.0 s each), 4 isolated checkouts per sandbox, `process.exec` to run pytest, `fs.upload_file` to place patches, labels + TTL on every sandbox, disposal at the end. |
-| **Nosana** | `orchestrator/everett/nosana.py`, `nosana/job.json` | Self-hosted **Qwen2.5-Coder-7B-Instruct** on vLLM (RTX 3090). Hypotheses in JSON mode, then `n=8` candidates per request — width is just GPU time, no per-token bill. |
+| **Nosana** | `orchestrator/everett/nosana.py`, `nosana/job.json` | One NVIDIA RTX 3090 (24 GB) rented from Nosana's decentralized GPU network ($0.19/h). The Nosana job is a container spec: vLLM 0.8.5 serving **Qwen2.5-Coder-7B-Instruct** as `coder` on port 9000 (OpenAI-compatible, health-checked on `/v1/models`, public HTTPS endpoint; stateless deployment is rescheduled on another GPU if a host fails). Engine: 14.25 GiB weights, 16k context, 113k-token KV cache (~7 full-length requests at once). Hypotheses in JSON mode; each patch request uses `n=8` — vLLM computes the shared prompt once and samples 8 fixes in parallel (~2.3 s). A run ≈ 35k tokens ≈ $0.003 of GPU time. |
 
 ## Measured (Daytona, Tier 1 account)
 
