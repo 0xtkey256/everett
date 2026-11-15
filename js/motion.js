@@ -71,6 +71,49 @@
     new IntersectionObserver(function (e) { visible = e[0].isIntersecting; }).observe(hero);
 
     var tilt = 0.42, pings = [];
+    // ---- continents as dots: Natural Earth 110m land (world-atlas), sampled on an equal-spacing grid ----
+    var land = [];
+    var TOKYO = [35.66 * Math.PI / 180, 139.75 * Math.PI / 180];
+    if (window.fetch) fetch("https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/land-110m.json")
+      .then(function (r) { return r.json(); })
+      .then(function (topo) {
+        if (!window.topojson) return;
+        var geo = window.topojson.feature(topo, topo.objects.land), polys = [];
+        (geo.features || [geo]).forEach(function (f) {
+          var g = f.geometry || f;
+          var cs = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
+          cs.forEach(function (poly) {
+            var b = [180, 90, -180, -90];
+            poly[0].forEach(function (p) { b[0] = Math.min(b[0], p[0]); b[1] = Math.min(b[1], p[1]); b[2] = Math.max(b[2], p[0]); b[3] = Math.max(b[3], p[1]); });
+            polys.push({ rings: poly, bb: b });
+          });
+        });
+        function inRing(x, y, ring) {
+          var inside = false;
+          for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+            var xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+            if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+          }
+          return inside;
+        }
+        function isLand(lon, lat) {
+          for (var k = 0; k < polys.length; k++) {
+            var P = polys[k], b = P.bb;
+            if (lon < b[0] || lon > b[2] || lat < b[1] || lat > b[3]) continue;
+            if (!inRing(lon, lat, P.rings[0])) continue;
+            for (var hI = 1; hI < P.rings.length; hI++) if (inRing(lon, lat, P.rings[hI])) return false;
+            return true;
+          }
+          return false;
+        }
+        var step = 2.3, out = [];
+        for (var la = -82; la <= 84; la += step) {
+          var dl = step / Math.max(Math.cos(la * Math.PI / 180), 0.25);
+          for (var lo = -180; lo < 180; lo += dl) if (isLand(lo, la)) out.push([la * Math.PI / 180, lo * Math.PI / 180]);
+        }
+        land = out;
+      })
+      .catch(function () { /* offline: keep the plain wireframe */ });
     function proj(lat, lon, rot) {
       var x = Math.cos(lat) * Math.sin(lon + rot), y = Math.sin(lat), z = Math.cos(lat) * Math.cos(lon + rot);
       var y2 = y * Math.cos(tilt) - z * Math.sin(tilt), z2 = y * Math.sin(tilt) + z * Math.cos(tilt);
@@ -86,7 +129,26 @@
       g.addColorStop(0, "rgba(79,209,255,0.10)"); g.addColorStop(1, "rgba(79,209,255,0)");
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R * 1.35, 0, 6.283); ctx.fill();
       ctx.fillStyle = "rgba(8,16,32,0.85)"; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.283); ctx.fill();
-      // graticule
+      // continents (dots, depth-shaded)
+      for (var di = 0; di < land.length; di++) {
+        var q2 = proj(land[di][0], land[di][1], rot);
+        if (q2.z <= 0.03) continue;
+        var rr = (0.75 + 1.05 * q2.z) * DPR;
+        ctx.fillStyle = "rgba(110,231,183," + (0.18 + 0.72 * q2.z).toFixed(3) + ")";
+        ctx.fillRect(q2.x - rr, q2.y - rr, rr * 2, rr * 2);
+      }
+      // Tokyo: where the demo's satellite pipeline should be looking
+      var tk = proj(TOKYO[0], TOKYO[1], rot);
+      if (land.length && tk.z > 0.05) {
+        var ph = (ts / 1100) % 1;
+        ctx.strokeStyle = "rgba(66,224,138," + (0.9 * (1 - ph)).toFixed(3) + ")"; ctx.lineWidth = 1.6 * DPR;
+        ctx.beginPath(); ctx.arc(tk.x, tk.y, (4 + 16 * ph) * DPR, 0, 6.283); ctx.stroke();
+        ctx.fillStyle = "#42e08a"; ctx.beginPath(); ctx.arc(tk.x, tk.y, 3.2 * DPR, 0, 6.283); ctx.fill();
+        ctx.globalAlpha = Math.min(1, tk.z * 2.5);
+        ctx.font = "700 " + (11 * DPR) + "px 'JetBrains Mono', monospace"; ctx.fillStyle = "#e8eef6";
+        ctx.fillText("TOKYO", tk.x + 8 * DPR, tk.y - 7 * DPR); ctx.globalAlpha = 1;
+      }
+      // graticule (faint backdrop)
       ctx.lineWidth = 1 * DPR;
       for (var la = -60; la <= 60; la += 30) line(function (t) { return proj(la * Math.PI / 180, t, rot); }, 0, 6.283);
       for (var lo = 0; lo < 360; lo += 20) line(function (t) { return proj(t, lo * Math.PI / 180, rot); }, -1.57, 1.57);
@@ -130,7 +192,7 @@
       for (var i = 0; i <= 48; i++) {
         var pt = f(t0 + (t1 - t0) * i / 48);
         if (prev && pt.z > 0 && prev.z > 0) {
-          ctx.strokeStyle = "rgba(79,209,255," + (0.08 + 0.22 * pt.z).toFixed(3) + ")";
+          ctx.strokeStyle = "rgba(79,209,255," + (0.03 + 0.08 * pt.z).toFixed(3) + ")";
           ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.lineTo(pt.x, pt.y); ctx.stroke();
         }
         prev = pt;
