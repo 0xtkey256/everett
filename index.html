@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=155454">
+<link rel="stylesheet" href="css/style.css?v=160302">
 </head>
 <body>
 
@@ -34,6 +34,21 @@
       <li><span class="n">2</span><b data-i18n="how2t">32 worlds, 32 fixes</b><p data-i18n="how2">Each world is an isolated Daytona sandbox with its own copy of the code and one AI-written fix.</p></li>
       <li><span class="n">3</span><b data-i18n="how3t">The tests decide</b><p data-i18n="how3">The fix that passes every test — and breaks nothing else — is merged. The other 31 are thrown away.</p></li>
     </ol>
+    <div class="why32">
+      <div class="w-num"><b>4.6%</b><span data-i18n="w_single">one AI attempt fixes the bug</span></div>
+      <div class="w-vs mono">vs</div>
+      <div class="w-num good"><b>5 / 6</b><span data-i18n="w_many">runs with 32 worlds found the fix</span></div>
+      <div class="w-num"><b>~50 s</b><span data-i18n="w_time">per run, end to end</span></div>
+    </div>
+    <div class="runs">
+      <span class="mono runs-lab" data-i18n="w_runs">real runs (196 worlds):</span>
+      <a class="run-chip ok" href="?replay=tokyo">✓ 4/32 · 53s</a>
+      <a class="run-chip ok" href="?replay=tower-1">✓ 1/36 · 53s</a>
+      <a class="run-chip miss" href="?replay=tower-2">✗ 0/32 · 39s</a>
+      <a class="run-chip ok" href="?replay=tokyo-run-a">✓ 1/32 · 47s</a>
+      <a class="run-chip ok" href="?replay=tokyo-run-b">✓ 2/32 · 47s</a>
+      <a class="run-chip ok" href="?replay=tokyo-run-c">✓ 1/32 · 46s</a>
+    </div>
     <p class="example" data-i18n="example">Today's example comes from our world, satellite imagery: one wrong line makes a map-tile library send Tokyo to Antarctica. Every world shows the satellite image its fix would fetch.</p>
     <div class="under">
       <div class="u-card"><b>Daytona</b><p data-i18n="u_daytona">Each world runs in an isolated Daytona sandbox started from a pre-built snapshot (Python, repo, dependencies): 1 base + 8 sandboxes × 4 worlds = 32 worlds within a 10-vCPU account. A world starts in ~2 s and runs the full test suite in under 2 s; every sandbox is labelled and deleted after the run. Built for <code>sandbox.fork()</code> — a copy-on-write clone of a ready world.</p></div>
@@ -119,7 +134,7 @@
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/motion.js?v=155454"></script>
-<script type="module" src="js/app.js?v=155454"></script>
+<script src="js/motion.js?v=160302"></script>
+<script type="module" src="js/app.js?v=160302"></script>
 </body>
 </html>
