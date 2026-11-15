@@ -10,7 +10,7 @@ const DICT = {
     m_fork: "世界の起動 p50", m_time: "経過時間", m_tokens: "Nosana トークン",
     branches: "ブランチ", qr: "スマホで一緒に見る", pause: "一時停止", play: "再生", restart: "最初から",
     pr_bad: "壊れたパイプライン", pr_good: "正解の位置",
-    pr_arrow: "CI が赤 — パイプラインは<span>{label}</span>がここにあると思っている。本当はあそこ。",
+    pr_arrow: "CI が失敗中 — <span>{label}</span> の衛星画像を頼むと、パイプラインは左の画像を返す。正しい位置は右。",
     tests_green: "テスト合格", worlds_tried: "試した世界", wall_time: "所要時間", back: "壁に戻る",
     ph_wait: "壊れたビルドを待っています…", ph_base: "ベースの世界を構築中…",
     ph_red: "<b>CI が赤:</b> {n} 件失敗 / 全 {total} 件 · {err}",
@@ -29,7 +29,7 @@ const DICT = {
 const EN = {
   eyebrow: "daytona hacksprint · tokyo",
   tag: "Generate many. Run all. <b>Keep what's proven.</b>",
-  pr_arrow: "CI is red — the pipeline thinks <span>{label}</span> is here. It should be there.",
+  pr_arrow: "CI is failing — ask the pipeline for <span>{label}</span> and it returns the left image. The correct location is on the right.",
   ph_wait: "waiting for the broken build…", ph_base: "building the base world…",
   ph_red: "<b>CI is red:</b> {n} failing of {total} · {err}",
   ph_hyp: "<b>Nosana</b> proposed {n} hypotheses — writing patches",
