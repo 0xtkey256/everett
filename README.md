@@ -8,6 +8,14 @@ When your tests fail, Everett opens 32 parallel worlds — isolated sandboxes on
 
 **Today's example comes from the satellite-imagery world:** a one-line bug in [mapbox/mercantile](https://github.com/mapbox/mercantile) (the map-tile library imagery pipelines use to find "which tile covers this place") makes `tile()` return x and y swapped — ask for Tokyo Tower and you get **polar ice at 80°S**. Every world also asks its own patched code where Tokyo Tower is, and the wall shows the real satellite image each world would fetch. In the recorded run 4 of 32 worlds found the fix and the smallest diff was merged (`return Tile(ytile, xtile, zoom)` → `return Tile(xtile, ytile, zoom)`, 136/136 tests, 53 s).
 
+![32 worlds on Daytona — green worlds fetch Tokyo, red ones still fetch polar ice](docs/img/wall.jpg)
+
+| Landing | The proven fix |
+|---|---|
+| ![Landing page: CI is red? Try 32 fixes at once](docs/img/landing.jpg) | ![Winner card: real Tokyo tile, one-line diff, 136/136 tests, Download patch / Copy PR](docs/img/winner.jpg) |
+
+<sub>Satellite imagery: Esri World Imagery. Presenter keys on the demo page: <kbd>F</kbd> fullscreen · <kbd>Space</kbd> pause · <kbd>R</kbd> restart · <kbd>L</kbd> EN/日本語.</sub>
+
 ## Why now
 Code is nearly free to write: agents now produce more changes than people can review, and source control is being rebuilt to absorb that volume. The bottleneck moved from *writing* to *choosing what to keep*. Execution environments should be **disposable by default** — spin up one per idea, run them all, merge the one that's proven. Everett is that selection layer.
 
