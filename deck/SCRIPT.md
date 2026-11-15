@@ -1,6 +1,6 @@
-# Everett — pitch script (2:29)
+# Everett — pitch script (2:37)
 
-_≈ 416 words; the timings assume ~165 words/min (≈ 2:46 at 150). Stage directions in [brackets]._
+_≈ 440 words; the timings assume ~165 words/min (≈ 2:56 at 150). Stage directions in [brackets]._
 
 ## 1. Title  (0:00–0:12)
 
@@ -26,11 +26,11 @@ Here's how. CI fails. A small AI model suggests four causes and writes thirty-tw
 
 I work with satellite imagery at Solafune, so here's an example from our world. [switch to the live site] We broke one line of mercantile, an open-source map-tile library. Ask it for Tokyo Tower, and it downloads polar ice. Thirty-two worlds, four found the fix, and the smallest won: one line, all hundred thirty-six tests green, in fifty-three seconds. Why thirty-two? One AI attempt fixes this bug under five percent of the time. With thirty-two worlds, six of seven runs found it. [back to the slides]
 
-## 7. Daytona & sandbox.fork()  (1:56–2:07)
+## 7. Daytona & sandbox.fork()  (1:56–2:15)
 
-Everett is designed around Daytona's sandbox fork: copy a running, ready-to-test world. Fork isn't on our tier yet, so today worlds start from a snapshot, in about two seconds.
+Huge thanks to the Daytona devs: sandbox.fork() is what grows our life tree. One call clones a running sandbox, copy-on-write, with everything already installed. Fork a fork, and it branches again. That works for any agent that explores, not just CI. It's not on our tier yet, so today we start from snapshots.
 
-## 8. Nosana  (2:07–2:25)
+## 8. Nosana  (2:15–2:33)
 
 The model runs on our own GPU: one RTX 3090 rented from Nosana for nineteen cents an hour. vLLM serves it as an OpenAI-style API. Each request asks for eight patches at once, back in about two seconds. A whole run costs about a third of a cent.
 
@@ -38,6 +38,6 @@ The model runs on our own GPU: one RTX 3090 rented from Nosana for nineteen cent
 
 [show for a few seconds while finishing the Nosana line — real Daytona and Nosana dashboards from today]
 
-## 10. Closing  (2:25–2:29)
+## 10. Closing  (2:33–2:37)
 
 Agents shouldn't guess. Branch the world, then observe. Thank you.
