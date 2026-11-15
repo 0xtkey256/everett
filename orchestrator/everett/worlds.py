@@ -17,6 +17,7 @@ from . import config
 from .pytest_run import CMD, first_error, parse_junit
 
 REPO = "/home/daytona/repo"
+_FORK_REFUSED = False   # remembered per process once Daytona says fork isn't available
 
 
 @dataclass
@@ -50,6 +51,9 @@ class Worlds:
         self.base = None
         self.boxes: list[Box] = []
         self.create_ms: list[int] = []
+        self.fork_ms: list[int] = []
+        self.fanout = "snapshot"
+        self.fork_error = ""
 
     # ---------- lifecycle ----------
     def _create(self, role: str):
@@ -61,12 +65,44 @@ class Worlds:
         return sb
 
     async def start(self, n_boxes: int, slots: int, bug_patch: str):
-        """Create base + world sandboxes in parallel; apply the bug everywhere; lay out `slots` checkouts per box."""
-        sbs = await asyncio.gather(asyncio.to_thread(self._create, "base"),
-                                   *[asyncio.to_thread(self._create, "world") for _ in range(n_boxes)])
-        self.base, worlds = sbs[0], sbs[1:]
-        await asyncio.gather(*[asyncio.to_thread(self._prep, sb, bug_patch, slots) for sb in sbs])
+        """Build the base world, then fan out to `n_boxes` world sandboxes with `slots` checkouts each.
+
+        Preferred: sandbox.fork() — copy-on-write clones of the prepared base world (deps, bug, checkouts
+        already in place). If Daytona refuses fork (needs the linux-vm class), fall back to creating the
+        world sandboxes from the pre-built snapshot. The refusal is remembered for this process."""
+        global _FORK_REFUSED
+        want_fork = config.FORK == "1" or (config.FORK == "auto" and not _FORK_REFUSED)
+        if want_fork:
+            self.base = await asyncio.to_thread(self._create, "base")
+            await asyncio.to_thread(self._prep, self.base, bug_patch, slots)
+            try:
+                first = await asyncio.to_thread(self._fork, self.base)
+                rest = await asyncio.gather(*[asyncio.to_thread(self._fork, self.base) for _ in range(n_boxes - 1)])
+                self.fanout = "fork"
+                self.boxes = [Box(sb, i, slots) for i, sb in enumerate([first, *rest])]
+                return
+            except Exception as e:  # noqa: BLE001
+                _FORK_REFUSED = True
+                self.fork_error = f"{type(e).__name__}: {e}"[-160:]
+            worlds = await asyncio.gather(*[asyncio.to_thread(self._create, "world") for _ in range(n_boxes)])
+            await asyncio.gather(*[asyncio.to_thread(self._prep, sb, bug_patch, slots) for sb in worlds])
+        else:
+            sbs = await asyncio.gather(asyncio.to_thread(self._create, "base"),
+                                       *[asyncio.to_thread(self._create, "world") for _ in range(n_boxes)])
+            self.base, worlds = sbs[0], list(sbs[1:])
+            await asyncio.gather(*[asyncio.to_thread(self._prep, sb, bug_patch, slots) for sb in sbs])
+        self.fanout = "snapshot"
         self.boxes = [Box(sb, i, slots) for i, sb in enumerate(worlds)]
+
+    def _fork(self, base):
+        t = time.perf_counter()
+        sb = base.fork()
+        self.fork_ms.append(int((time.perf_counter() - t) * 1000))
+        try:
+            sb.set_labels({"app": "everett", "run": self.run_id, "role": "world"})
+        except Exception:  # noqa: BLE001
+            pass
+        return sb
 
     def _prep(self, sb, bug_patch: str, slots: int):
         sb.fs.upload_file(bug_patch.encode(), "/tmp/bug.patch")

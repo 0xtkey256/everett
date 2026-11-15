@@ -71,7 +71,8 @@ async def orchestrate(spec: Spec, bus: EventBus, worlds, llm, model_name: str = 
         probe = ({"label": spec.landmark, "tile": base.tile, "truth": spec.truth} if spec.probe else None)
         bus.emit(BaseReady(setup_ms=int((time.monotonic() - t0) * 1000), sandbox_id=worlds.base.id,
                            tests_total=len(test_ids), failing_tests=sorted(base_failing), error_summary=base.first_error,
-                           probe=probe))
+                           probe=probe, fanout=getattr(worlds, "fanout", None),
+                           fanout_note=(getattr(worlds, "fork_error", "") or None)))
 
         stage = "context"
         sources = await asyncio.to_thread(worlds.source_files)

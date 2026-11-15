@@ -22,6 +22,8 @@ NOSANA_BASE_URL = os.environ.get("NOSANA_BASE_URL", "").rstrip("/")
 NOSANA_MODEL = os.environ.get("NOSANA_MODEL", "coder")
 NOSANA_API_KEY = os.environ.get("NOSANA_API_KEY", "none")
 ADMIN_TOKEN = os.environ.get("EVERETT_ADMIN_TOKEN", "")
+# fan-out: "auto" tries sandbox.fork() and falls back to snapshot creation; "1" = fork only first; "0" = snapshot only
+FORK = os.environ.get("EVERETT_FORK", "auto").lower()
 CORS_ORIGINS = [o for o in os.environ.get("EVERETT_CORS", "http://localhost:8790,http://127.0.0.1:8790,https://0xtkey256.github.io").split(",") if o]
 
 

@@ -37,6 +37,8 @@ class BaseReady(_E):
     failing_tests: list[str]
     error_summary: str
     probe: Optional[dict] = None          # {label, tile:[x,y,z] (broken build), truth:[x,y,z]}
+    fanout: Optional[str] = None          # "fork" (sandbox.fork) or "snapshot"
+    fanout_note: Optional[str] = None
 
 
 class BaseTests(_E):

@@ -1,6 +1,6 @@
-import { initialState, reduce, liveSandboxes, median, REASON_TEXT } from "./reducer.js?v=154325";
-import { t as tr, applyStatic, onToggle } from "./i18n.js?v=154325";
-import { Replay, connectLive } from "./replay.js?v=154325";
+import { initialState, reduce, liveSandboxes, median, REASON_TEXT } from "./reducer.js?v=154938";
+import { t as tr, applyStatic, onToggle } from "./i18n.js?v=154938";
+import { Replay, connectLive } from "./replay.js?v=154938";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -113,7 +113,8 @@ function loop() {
 
 function render() {
   const s = S;
-  if (s.run) $("m-bug").textContent = `${s.run.repo} · ${s.run.bug_id}`;
+  if (s.run) $("m-bug").textContent = `${s.run.repo} · ${s.run.bug_id}` +
+    (s.base?.fanout ? ` · via ${s.base.fanout === "fork" ? "sandbox.fork()" : "snapshot"}` : "");
   setNum("m-created", s.counters.created);
   setNum("m-disposed", s.counters.disposed);
   setNum("m-merged", s.counters.merged);
